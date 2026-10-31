@@ -1,0 +1,22 @@
+# Ambiente
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Segredos: nunca versionar
+.env
+.env.*
+*.key
+*api-key*
+*bearer-token*
+
+# Dados pessoais de saúde e treino (arquivos FIT, exportações, respostas da API)
+data/
+*.fit
+*.zip
+*.gpx
+*.tcx
+
+# Anotações particulares do autor
+notas-privadas/
