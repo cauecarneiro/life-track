@@ -13,15 +13,23 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-**Hoje**
-- Sono, HRV, frequência cardíaca em repouso e Body Battery da última noite, cada um numa faixa que mostra o seu normal. Verde quando está dentro ou fora para o lado bom, vermelho quando está fora para o lado ruim.
-- Tendências de 7, 30, 90 ou 180 dias: fases do sono com a nota, HRV contra a faixa equilibrada da Garmin, FC de repouso, Body Battery, estresse e passos contra a meta.
+O design é minimalista, com preto como base, tons de cinza e uma única família de fonte (Geist). Cor só aparece em pontinhos de status, sempre acompanhados de texto.
+
+**Hoje (página inicial)**
+- Seis indicadores em uma grade: sono, HRV, repouso, Body Battery, passos e estresse. Cada um mostra o valor mais recente, se está dentro, acima ou abaixo do **seu** normal, a diferença para a média de 30 dias e uma linha dos últimos 30 dias.
+- O mapa de calor de atividade dos últimos 12 meses (um quadrado por dia, quanto mais claro, mais minutos de treino). Clique em um dia para abrir o treino.
+- Os últimos treinos e o resumo dos últimos 7 dias contra a semana anterior.
+
+**Cada indicador** (clique em um cartão da página inicial)
+- Um dia em destaque, com o valor grande e os dados daquele dia: no sono, horário de dormir e acordar, nota, necessidade e fases; no HRV, a média da semana e a faixa equilibrada; no estresse, como o dia se dividiu; e assim por diante.
+- Troque de dia com as setas da tela, com as **setas do teclado**, clicando no gráfico, clicando no mapa de calor do ano ou escolhendo uma linha da tabela.
+- Gráfico dia a dia de 30 dias, 90 dias, 6 meses ou 1 ano, com o dia escolhido marcado. Média, valor mais baixo, mais alto e dias com dado do período. Mapa de calor do ano inteiro do indicador e tabela de todos os dias.
 
 **Treinos**
-- Totais do período, tempo por semana separado por tipo e lista de todos os treinos, com filtro por modalidade.
-- Página de cada treino: mapa do percurso, ritmo e frequência cardíaca ao longo da distância, tempo em cada zona, altimetria, cadência e potência, dinâmica de corrida (contato com o solo, oscilação vertical, passada) e tabela de voltas.
+- Totais do período, filtro por modalidade, mapa de calor, horas por semana e lista completa.
+- Página de cada treino: mapa do percurso, ritmo, frequência cardíaca, altimetria, cadência e potência (cada um no seu gráfico), tempo em cada zona, dinâmica de corrida (contato com o solo, oscilação vertical, passada) e tabela de voltas.
 
-O tema claro ou escuro segue o do sistema.
+O dia de hoje ainda está em andamento, então passos e estresse de hoje não entram nos cartões nem nas médias.
 
 ## Como funciona
 
@@ -138,6 +146,7 @@ Detalhes e fontes em [docs/pesquisa-de-apis.md](docs/pesquisa-de-apis.md).
 - [x] Garmin: sono, HRV, repouso, Body Battery, estresse, passos
 - [x] Garmin: treinos com mapa, ritmo, FC, zonas, altimetria, cadência, potência e voltas
 - [ ] Garmin: FC ao longo do dia, SpO2, zonas e idade fitness
+- [ ] Tema claro
 - [ ] Oura Ring
 - [ ] WHOOP
 - [ ] Apple Watch (app iOS)
@@ -151,7 +160,7 @@ Dados de saúde são sensíveis. O projeto foi feito para que nada saia da sua m
 
 - Nenhum dado seu é salvo em disco pelo painel. O `.gitignore` bloqueia `data/`, arquivos `.fit`, `.zip`, `.gpx`, `.tcx`, `.env` e qualquer arquivo com `api-key` ou `bearer-token` no nome, para evitar commits acidentais.
 - O token temporário da Garmin é guardado pelo cliente oficial em `~/.config/garmin/`, fora da pasta do projeto.
-- O navegador carrega, de serviços externos: as fontes do Google Fonts, as bibliotecas Chart.js e Leaflet (cdnjs) e os **blocos de mapa do OpenStreetMap**. Esse último recebe os endereços dos blocos que você visualiza, o que revela a região dos seus percursos. Se isso importa para você, troque o provedor de mapas em `app/static/app.js` ou desative o mapa.
+- O navegador carrega, de serviços externos: a fonte Geist (Google Fonts), as bibliotecas Chart.js e Leaflet (cdnjs) e os **blocos de mapa do OpenStreetMap**. Esse último recebe os endereços dos blocos que você visualiza, o que revela a região dos seus percursos. Se isso importa para você, troque o provedor de mapas em `app/static/js/views/workout.js` ou desative o mapa.
 - Ao abrir uma issue ou enviar um pull request, **não inclua** chaves, respostas da API, arquivos FIT ou capturas de tela com seus dados.
 
 ## Estrutura
@@ -159,7 +168,15 @@ Dados de saúde são sensíveis. O projeto foi feito para que nada saia da sua m
 ```
 app/
   server.py        servidor FastAPI: chama a Garmin, processa os arquivos FIT, entrega JSON
-  static/          interface (HTML, CSS e JavaScript, sem etapa de build)
+  static/
+    index.html
+    css/style.css  todo o visual (cores e medidas em variáveis no topo)
+    js/            módulos ES, sem etapa de build
+      main.js        rotas, teclado, dica flutuante
+      metrics.js     o que cada indicador mede e mostra (um lugar para adicionar indicadores)
+      heatmap.js     o mapa de calor
+      charts.js      gráficos (Chart.js) e mini-gráficos em SVG
+      views/         home, indicador, treinos e treino
 docs/
   pesquisa-de-apis.md   o que cada fabricante oferece, com fontes
 iniciar.sh         sobe o servidor e abre o navegador
@@ -177,7 +194,7 @@ Rotas do servidor:
 
 ## Contribuindo
 
-Contribuições são bem-vindas, principalmente para os itens do [roteiro](#roteiro). Para adicionar um aparelho, o ponto de partida é `build_overview` em `app/server.py`: ele monta um registro por dia com campos como `sleepH`, `hrv`, `restingHR`, `bbMax` e `steps`. Um novo provedor precisa devolver registros nesse mesmo formato para a interface funcionar sem mudanças.
+Contribuições são bem-vindas, principalmente para os itens do [roteiro](#roteiro). Para adicionar um indicador na tela, o ponto de partida é `app/static/js/metrics.js`. Para adicionar um aparelho, o ponto de partida é `build_overview` em `app/server.py`: ele monta um registro por dia com campos como `sleepH`, `hrv`, `restingHR`, `bbMax` e `steps`. Um novo provedor precisa devolver registros nesse mesmo formato para a interface funcionar sem mudanças.
 
 Antes de abrir um pull request, confira que nenhum dado pessoal entrou no commit (`git diff --staged`).
 

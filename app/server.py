@@ -162,7 +162,7 @@ def build_overview(start: date, end: date) -> dict:
                 steps=get(d, "movement", "steps", "value"),
                 stepGoal=get(d, "movement", "steps", "goal"),
                 distanceKm=round((get(d, "movement", "steps", "distanceInMeters") or 0) / 1000, 2),
-                stressAvg=get(d, "stress", "avgLevel"),
+                stressAvg=(lambda v: v if v is not None and v >= 0 else None)(get(d, "stress", "avgLevel")),
                 stressMin={
                     name: minutes((get(d, "stress", key) or 0) / 1000)
                     for name, key in (
