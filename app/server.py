@@ -142,6 +142,19 @@ def build_overview(start: date, end: date) -> dict:
                 sleepHR=s.get("avgHeartRate"),
                 sleepStress=s.get("avgSleepStress"),
                 sleepNeedMin=get(s, "sleepNeed", "actual"),
+                sleepBaselineMin=get(s, "sleepNeed", "baseline"),
+                napMin=minutes(s.get("napTimeSeconds")),
+                awakeCount=s.get("awakeCount"),
+                sleepRespAvg=s.get("averageRespirationValue"),
+                sleepRespLow=s.get("lowestRespirationValue"),
+                sleepRespHigh=s.get("highestRespirationValue"),
+                sleepSpo2=s.get("averageSpO2Value"),
+                sleepSpo2Low=s.get("lowestSpO2Value"),
+                sleepFeedback=s.get("sleepScoreFeedback"),
+                sleepSub={
+                    k: {"value": get(s, "sleepScores", k, "value"), "q": get(s, "sleepScores", k, "qualifierKey")}
+                    for k in ("totalDuration", "stress", "awakeCount", "remPercentage", "lightPercentage", "deepPercentage", "restlessness")
+                },
             )
         for h in (hrv or {}).get("hrvSummaries", []):
             if h.get("lastNightAvg") is None:
@@ -150,6 +163,7 @@ def build_overview(start: date, end: date) -> dict:
             r.update(
                 hrv=h["lastNightAvg"],
                 hrvWeekly=h.get("weeklyAvg"),
+                hrvPeak5=h.get("lastNight5MinHigh"),
                 hrvStatus=h.get("status"),
                 hrvLow=get(h, "baseline", "balancedLow"),
                 hrvHigh=get(h, "baseline", "balancedUpper"),
@@ -177,12 +191,27 @@ def build_overview(start: date, end: date) -> dict:
                 bbMin=get(d, "bodyBattery", "minValue"),
                 bbCharged=get(d, "bodyBattery", "chargedValue"),
                 bbDrained=get(d, "bodyBattery", "drainedValue"),
+                minHR=get(d, "heartRate", "minValue"),
                 kcal=get(d, "calories", "burnedTotal"),
                 kcalActive=get(d, "calories", "burnedActive"),
+                kcalRest=get(d, "calories", "burnedResting"),
                 respiration=get(d, "respiration", "avgValue"),
+                respMax=get(d, "respiration", "maxValue"),
+                respMin=get(d, "respiration", "minValue"),
                 moderateMin=get(d, "intensityMinutes", "moderate"),
                 vigorousMin=get(d, "intensityMinutes", "vigorous"),
+                intensityGoal=get(d, "intensityMinutes", "goal"),
+                floorsUp=get(d, "movement", "floorsAscended", "value"),
+                floorsDown=get(d, "movement", "floorsDescended", "value"),
+                floorsGoal=get(d, "movement", "floorsAscended", "goal"),
+                stressMax=get(d, "stress", "maxLevel"),
+                stressQualifier=get(d, "stress", "qualifier"),
+                bbLatest=get(d, "bodyBattery", "latestValue"),
+                altitude=get(d, "pulseOx", "avgAltitudeInMeters"),
             )
+            mod, vig = get(d, "intensityMinutes", "moderate"), get(d, "intensityMinutes", "vigorous")
+            if mod is not None or vig is not None:
+                r["intensity"] = (mod or 0) + 2 * (vig or 0)  # vigorosos contam em dobro na meta da Garmin
 
     days = sorted(rows.values(), key=lambda r: r["date"])
     return {"start": start.isoformat(), "end": end.isoformat(), "days": days}
@@ -213,6 +242,20 @@ def slim_activity(a: dict) -> dict:
         "teLabel": a.get("trainingEffectLabel"),
         "bbDiff": a.get("differenceBodyBattery"),
         "location": a.get("locationName"),
+        "maxSpeed": a.get("maxSpeed"),
+        "elevLoss": a.get("elevationLoss"),
+        "minElev": a.get("minElevation"),
+        "maxElev": a.get("maxElevation"),
+        "minTemp": a.get("minTemperature"),
+        "maxTemp": a.get("maxTemperature"),
+        "steps": a.get("steps"),
+        "maxCadence": a.get("maxRunningCadenceInStepsPerMinute"),
+        "bmrKcal": a.get("bmrCalories"),
+        "waterMl": a.get("waterEstimated"),
+        "moderateMin": a.get("moderateIntensityMinutes"),
+        "vigorousMin": a.get("vigorousIntensityMinutes"),
+        "teMsg": a.get("aerobicTrainingEffectMessage"),
+        "teAnMsg": a.get("anaerobicTrainingEffectMessage"),
         "zones": [a.get(f"hrTimeInZone_{i}") for i in range(1, 6)],
     }
 
@@ -327,6 +370,203 @@ def parse_fit(zip_bytes: bytes) -> dict:
 app = FastAPI(title="Life Track")
 
 
+# ------------------------------------------------------------------ detalhe de um dia
+
+
+def iso_ms(text: str | None) -> float | None:
+    """'2026-11-01T03:00:00.0' (UTC) para milissegundos."""
+    if not text:
+        return None
+    return datetime.strptime(text[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc).timestamp() * 1000
+
+
+def safe(fn, *args):
+    """Cada dado é independente: se um falhar, os outros continuam."""
+    try:
+        return fn(*args)
+    except GarminPersonalApiError:
+        return None
+
+
+def curve(rows, midnight_ms: float | None, step: int = 1):
+    """[[timestamp, valor]] para [[minuto do dia, valor]], sem os vazios."""
+    if not rows or midnight_ms is None:
+        return []
+    out = []
+    for i, r in enumerate(rows):
+        if i % step or r[1] is None:
+            continue
+        out.append([round((r[0] - midnight_ms) / 60000), r[1]])
+    return out
+
+
+def food_summary(log: dict | None) -> dict:
+    """Refeições do diário alimentar. O formato só foi visto vazio; lê os nomes mais prováveis dos campos."""
+    foods = (log or {}).get("loggedFoodsWithServingSizes") or []
+    items = []
+    for f in foods:
+        n = f.get("nutritionContents") or f
+        items.append(
+            {
+                "name": f.get("foodName") or f.get("name"),
+                "kcal": n.get("calories"),
+                "protein": n.get("protein"),
+                "carbs": n.get("carbs") or n.get("carbohydrate"),
+                "fat": n.get("fat"),
+            }
+        )
+    total = lambda k: round(sum(i[k] or 0 for i in items), 1) if items else None
+    return {
+        "meals": len((log or {}).get("mealDetails") or []),
+        "items": items,
+        "kcal": total("kcal"),
+        "protein": total("protein"),
+        "carbs": total("carbs"),
+        "fat": total("fat"),
+    }
+
+
+def build_day(day: date) -> dict:
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        f = {
+            "hr": pool.submit(safe, garmin.call, "get_daily_heart_rate", day),
+            "bb": pool.submit(safe, garmin.call, "get_daily_body_battery", day, day),
+            "hrv": pool.submit(safe, garmin.call, "get_daily_hrv", day),
+            "spo2": pool.submit(safe, garmin.call, "get_daily_spo2", day),
+            "food": pool.submit(safe, garmin.call, "get_daily_food_logs", day),
+            "water": pool.submit(safe, garmin.call, "get_daily_hydration", day, day),
+        }
+        r = {k: v.result() for k, v in f.items()}
+
+    hr = r["hr"] or {}
+    hr_mid = iso_ms(hr.get("startTimestampGMT"))
+    hr_points = curve(hr.get("heartRateValues"), hr_mid)
+
+    bb = (r["bb"] or [{}])[0] if isinstance(r["bb"], list) else {}
+    bb_mid = iso_ms(bb.get("startTimestampGMT"))
+    events = [
+        {
+            "type": e.get("eventType"),
+            "start": round(((iso_ms(e.get("eventStartTimeGmt")) or 0) - (bb_mid or 0)) / 60000),
+            "minutes": minutes((e.get("durationInMilliseconds") or 0) / 1000),
+            "impact": e.get("bodyBatteryImpact"),
+        }
+        for e in bb.get("bodyBatteryActivityEvent") or []
+    ]
+
+    hrv = r["hrv"] or {}
+    readings = [
+        {"t": (x.get("readingTimeLocal") or "")[11:16], "v": x.get("hrvValue")}
+        for x in hrv.get("hrvReadings") or []
+        if x.get("hrvValue") is not None
+    ]
+
+    sp = r["spo2"] or {}
+    spo2_hourly = [
+        [round((x[0] - (iso_ms(sp.get("startTimestampGMT")) or 0)) / 60000), x[1]]
+        for x in sp.get("spO2HourlyAverages") or []
+        if x[1] is not None
+    ]
+
+    water = r["water"] if isinstance(r["water"], list) else []
+    return {
+        "date": day.isoformat(),
+        "hr": {
+            "points": hr_points,
+            "min": hr.get("minHeartRate"),
+            "max": hr.get("maxHeartRate"),
+            "resting": hr.get("restingHeartRate"),
+            "avgResting7": hr.get("lastSevenDaysAvgRestingHeartRate"),
+        },
+        "bb": {
+            "points": curve(bb.get("bodyBatteryValuesArray"), bb_mid),
+            "charged": bb.get("charged"),
+            "drained": bb.get("drained"),
+            "events": events,
+            "level": get(bb, "endOfDayBodyBatteryDynamicFeedbackEvent", "bodyBatteryLevel"),
+        },
+        "hrv": {
+            "readings": readings,
+            "lastNight": get(hrv, "hrvSummary", "lastNightAvg"),
+            "peak5": get(hrv, "hrvSummary", "lastNight5MinHigh"),
+            "weekly": get(hrv, "hrvSummary", "weeklyAvg"),
+            "status": get(hrv, "hrvSummary", "status"),
+            "low": get(hrv, "hrvSummary", "baseline", "balancedLow"),
+            "high": get(hrv, "hrvSummary", "baseline", "balancedUpper"),
+        },
+        "spo2": {
+            "avg": sp.get("averageSpO2"),
+            "lowest": sp.get("lowestSpO2"),
+            "sleepAvg": sp.get("avgSleepSpO2"),
+            "hourly": spo2_hourly,
+        },
+        "food": food_summary(r["food"]),
+        "water": water,
+    }
+
+
+# --------------------------------------------------------------- corpo e perfil
+
+
+def build_profile() -> dict:
+    today = date.today()
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        f = {
+            "zones": pool.submit(safe, garmin.call, "get_heart_rate_zones"),
+            "age": pool.submit(safe, garmin.call, "get_fitness_age", today - timedelta(days=1)),
+            "weight": pool.submit(safe, garmin.call, "get_weight_measurements", today - timedelta(days=365), today),
+            "goals": pool.submit(safe, garmin.call, "get_effective_weight_goals", today - timedelta(days=365), today),
+            "water": pool.submit(safe, garmin.call, "get_daily_hydration", today - timedelta(days=29), today),
+        }
+        r = {k: v.result() for k, v in f.items()}
+
+    zones = (r["zones"] or [{}])[0] if isinstance(r["zones"], list) and r["zones"] else {}
+    age = r["age"] or {}
+    weights = []
+    for w in get(r["weight"], "dailyWeightSummaries") or []:
+        m = (w.get("latestWeight") or (w.get("allWeightMetrics") or [{}])[0]) or {}
+        grams = m.get("weight")
+        if grams:
+            weights.append(
+                {
+                    "date": w.get("summaryDate") or m.get("calendarDate"),
+                    "kg": round(grams / 1000, 1),
+                    "bmi": m.get("bmi"),
+                    "fat": m.get("bodyFat"),
+                    "water": m.get("bodyWater"),
+                    "muscleKg": round(m["muscleMass"] / 1000, 1) if m.get("muscleMass") else None,
+                    "boneKg": round(m["boneMass"] / 1000, 1) if m.get("boneMass") else None,
+                }
+            )
+    weights.sort(key=lambda x: x["date"] or "")
+    return {
+        "zones": {
+            "method": zones.get("trainingMethod"),
+            "floors": [zones.get(f"zone{i}Floor") for i in range(1, 6)],
+            "max": zones.get("maxHeartRateUsed"),
+            "resting": zones.get("restingHeartRateUsed"),
+        }
+        if zones
+        else None,
+        "fitnessAge": {
+            "age": age.get("chronologicalAge"),
+            "fitness": age.get("fitnessAge"),
+            "rhr": get(age, "components", "rhr", "value"),
+            "bmi": get(age, "components", "bmi", "value"),
+            "bmiDate": get(age, "components", "bmi", "lastMeasurementDate"),
+            "vigorousMinutes": get(age, "components", "vigorousMinutesAvg", "value"),
+            "vigorousTarget": get(age, "components", "vigorousMinutesAvg", "targetValue"),
+            "vigorousDays": get(age, "components", "vigorousDaysAvg", "value"),
+            "vigorousDaysTarget": get(age, "components", "vigorousDaysAvg", "targetValue"),
+        }
+        if age
+        else None,
+        "weights": weights,
+        "weightGoals": len(get(r["goals"], "userGoals") or []),
+        "water": r["water"] if isinstance(r["water"], list) else [],
+    }
+
+
 @app.exception_handler(GarminPersonalApiError)
 def garmin_error(_, exc: GarminPersonalApiError):
     from fastapi.responses import JSONResponse
@@ -360,6 +600,17 @@ def activity_detail(activity_id: int):
             raise
 
     return cached(f"act:{activity_id}", TTL_DETAIL, build)
+
+
+@app.get("/api/day/{day}")
+def day_detail(day: date):
+    ttl = TTL_ACTIVITIES if day >= date.today() else TTL_DETAIL
+    return cached(f"day:{day}", ttl, lambda: build_day(day))
+
+
+@app.get("/api/profile")
+def profile():
+    return cached("profile", TTL_DETAIL, build_profile)
 
 
 @app.post("/api/refresh")

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#050505">
   <title>Life Track</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,15 +15,14 @@
 <body>
   <header class="bar">
     <div class="bar-in">
-      <a class="mark" href="#/">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>
-        Life Track
-      </a>
-      <nav class="links" aria-label="Seções">
-        <a href="#/" data-nav="home">Hoje</a>
-        <a href="#/treinos" data-nav="workouts">Treinos</a>
-      </nav>
-      <button class="icon" type="button" id="refresh" aria-label="Buscar de novo na Garmin" title="Buscar de novo na Garmin">
+      <a class="mark" href="#/"><i aria-hidden="true"></i>Life Track</a>
+      <nav class="pills" aria-label="Seções" id="nav"></nav>
+      <div class="search" role="search">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Buscar um dado, como sono ou HRV" autocomplete="off" spellcheck="false" aria-label="Buscar um dado">
+        <ul id="found" class="found" hidden></ul>
+      </div>
+      <button class="circle" type="button" id="refresh" aria-label="Buscar de novo na Garmin" title="Buscar de novo na Garmin">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
     </div>

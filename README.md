@@ -13,23 +13,30 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-O design é minimalista, com preto como base, tons de cinza e uma única família de fonte (Geist). Cor só aparece em pontinhos de status, sempre acompanhados de texto.
+O design é minimalista e escuro: preto de base, cartões em degradê de cinza, o branco como único destaque e uma família de fonte (Geist). A barra superior leva a cada página e tem uma busca por dado ("sono", "HRV", "peso"...).
 
-**Hoje (página inicial)**
-- Seis indicadores em uma grade: sono, HRV, repouso, Body Battery, passos e estresse. Cada um mostra o valor mais recente, se está dentro, acima ou abaixo do **seu** normal, a diferença para a média de 30 dias e uma linha dos últimos 30 dias.
-- O mapa de calor de atividade dos últimos 12 meses (um quadrado por dia, quanto mais claro, mais minutos de treino). Clique em um dia para abrir o treino.
-- Os últimos treinos e o resumo dos últimos 7 dias contra a semana anterior.
+**Início**
+- Cartões do dia escolhido: Body Battery, HRV, FC de repouso, sono (com as fases), esforço (minutos de intensidade), frequência cardíaca (curva do dia inteiro), passos, estresse, respiração, calorias, peso, idade física, zonas de FC e hidratação. Cada cartão traz o valor, a variação contra a média dos 14 dias anteriores e as barras ou a linha desses dias.
+- O calendário do cartão da direita troca o dia de **todos** os cartões. Setas e atalhos andam dia a dia.
+- "Sua semana": sete dias lado a lado, com todos os indicadores principais.
+- O mapa de calor de treinos dos últimos 12 meses (um quadrado por dia, quanto mais claro, mais minutos) e os últimos treinos.
 
-**Cada indicador** (clique em um cartão da página inicial)
-- Um dia em destaque, com o valor grande e os dados daquele dia: no sono, horário de dormir e acordar, nota, necessidade e fases; no HRV, a média da semana e a faixa equilibrada; no estresse, como o dia se dividiu; e assim por diante.
-- Troque de dia com as setas da tela, com as **setas do teclado**, clicando no gráfico, clicando no mapa de calor do ano ou escolhendo uma linha da tabela.
-- Gráfico dia a dia de 30 dias, 90 dias, 6 meses ou 1 ano, com o dia escolhido marcado. Média, valor mais baixo, mais alto e dias com dado do período. Mapa de calor do ano inteiro do indicador e tabela de todos os dias.
+**Sinais vitais, Corpo e Nutrição**: as mesmas ideias, agrupadas por assunto. Sinais vitais traz a FC do dia, o HRV da noite, a respiração, o oxigênio e o estresse. Corpo traz a curva da Body Battery com os eventos que a carregaram ou gastaram, peso, idade física e zonas. Nutrição traz calorias gastas e consumidas, água e o diário alimentar.
+
+**Cada indicador** (clique em um cartão)
+- Um dia em destaque com todos os dados daquele dia: no sono, horários, nota, as sete avaliações da Garmin (duração, estresse, REM, profundo...), despertares, respiração e necessidade; no HRV, a média da semana, o pico de 5 min e a faixa equilibrada; nas calorias, repouso e ativas; e assim por diante.
+- A **curva do dia** (FC com o tempo em cada zona, Body Battery, HRV da noite).
+- Troque de dia com as setas da tela, as **setas do teclado**, o gráfico, o mapa de calor do ano ou a tabela. Períodos de 30 dias a 1 ano, média, mínimo, máximo e tabela de todos os dias.
 
 **Treinos**
 - Totais do período, filtro por modalidade, mapa de calor, horas por semana e lista completa.
-- Página de cada treino: mapa do percurso, ritmo, frequência cardíaca, altimetria, cadência e potência (cada um no seu gráfico), tempo em cada zona, dinâmica de corrida (contato com o solo, oscilação vertical, passada) e tabela de voltas.
+- Página de cada treino: mapa, ritmo, FC, altimetria, cadência e potência (um gráfico para cada), zonas, dinâmica de corrida, voltas e "Mais números" (velocidade máxima, temperatura, altitude, passos, minutos de intensidade, efeito anaeróbico, Body Battery gasta, perda de líquido).
 
-O dia de hoje ainda está em andamento, então passos e estresse de hoje não entram nos cartões nem nas médias.
+O dia de hoje ainda está em andamento: passos, calorias, estresse, andares e esforço aparecem como "até agora" e ficam fora das médias.
+
+### O que depende do seu relógio e da sua conta
+
+O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se você os registrar: **oxigênio (SpO2)** exige o Pulse Ox ligado no relógio; **peso, gordura corporal, hidratação e alimentação** vêm do Garmin Connect (balança, registro manual ou integração) e o Life Track só lê. Quando não há registro, o cartão diz isso. O formato do diário alimentar e da hidratação foi implementado sem dados reais para conferir.
 
 ## Como funciona
 
@@ -145,7 +152,7 @@ Detalhes e fontes em [docs/pesquisa-de-apis.md](docs/pesquisa-de-apis.md).
 
 - [x] Garmin: sono, HRV, repouso, Body Battery, estresse, passos
 - [x] Garmin: treinos com mapa, ritmo, FC, zonas, altimetria, cadência, potência e voltas
-- [ ] Garmin: FC ao longo do dia, SpO2, zonas e idade fitness
+- [x] Garmin: FC ao longo do dia, Body Battery e HRV da noite, respiração, calorias, andares, zonas, idade física, peso, SpO2, hidratação e diário alimentar (quando registrados)
 - [ ] Tema claro
 - [ ] Oura Ring
 - [ ] WHOOP
@@ -176,7 +183,8 @@ app/
       metrics.js     o que cada indicador mede e mostra (um lugar para adicionar indicadores)
       heatmap.js     o mapa de calor
       charts.js      gráficos (Chart.js) e mini-gráficos em SVG
-      views/         home, indicador, treinos e treino
+      cards.js       os cartões do início e das páginas de resumo
+      views/         hub (início, vitais, corpo, nutrição), indicador, treinos e treino
 docs/
   pesquisa-de-apis.md   o que cada fabricante oferece, com fontes
 iniciar.sh         sobe o servidor e abre o navegador
@@ -187,7 +195,9 @@ Rotas do servidor:
 
 | Rota | O que devolve |
 |---|---|
-| `GET /api/overview?days=30` | Um registro por dia: sono, HRV, repouso, Body Battery, estresse, passos |
+| `GET /api/overview?days=30` | Um registro por dia: sono (com notas), HRV, FC, Body Battery, estresse, passos, andares, calorias, respiração, intensidade |
+| `GET /api/day/{AAAA-MM-DD}` | Curva de FC, Body Battery e HRV da noite, SpO2, alimentação e água de um dia |
+| `GET /api/profile` | Zonas de FC, idade física, peso e hidratação |
 | `GET /api/activities?days=365` | Lista de treinos |
 | `GET /api/activities/{id}` | Pontos do percurso, voltas e dinâmica de um treino, lidos do arquivo FIT |
 | `POST /api/refresh` | Limpa o cache em memória |

@@ -1,11 +1,11 @@
 // Indicador: um dia em destaque, outros dias no gráfico, no mapa de calor e na tabela.
-import { loadOverview, hasOverview } from "../api.js";
+import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js";
 import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js";
 import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js";
 import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js";
 import { loadingHtml, emptyHtml, fillDays, barsHtml } from "../ui.js";
 import { go } from "../nav.js";
-import { esc, num, avg, fmtDay, addDays, minutesText, icon } from "../util.js";
+import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js";
 
 const RANGES = [[30, "30 dias"], [90, "90 dias"], [180, "6 meses"], [365, "1 ano"]];
 const url = (id, d, r, x) => `#/m/${id}?d=${d}&r=${r}${x ? "&x=1" : ""}`;
@@ -84,6 +84,8 @@ function chartConfig(m, rows, selIdx, pick) {
         }),
       };
     case "rhr":
+    case "resp":
+    case "hr":
       return { type: "line", data: { labels, datasets: [line(m.label, rows.map((r) => r[m.key] ?? null))] }, options: merge({ plugins: { crosshair: { enabled: true }, tooltip: { callbacks: { label: val } } } }) };
     case "battery":
       return {
@@ -100,11 +102,19 @@ function chartConfig(m, rows, selIdx, pick) {
         ] },
         options: merge({ plugins: { legend: legendTop, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${num(c.raw)}` } } } }),
       };
-    default: // stress
+    case "calories": {
+      const part = (label, key, color) => ({ label, data: rows.map((r) => r[key] ?? null), backgroundColor: color, stack: "k", ...bar, borderRadius: 1 });
+      return {
+        type: "bar",
+        data: { labels, datasets: [part("Em repouso", "kcalRest", css("--s-light")), part("Ativas", "kcalActive", text)] },
+        options: merge({ scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: legendTop, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${num(c.raw)} kcal` } } } }),
+      };
+    }
+    default: // estresse, esforço, andares
       return {
         type: "bar",
         data: { labels, datasets: [{ label: m.label, data: rows.map((r) => r[m.key] ?? null), backgroundColor: text, ...bar }] },
-        options: merge({ scales: { y: { min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: val } } } }),
+        options: merge({ scales: { y: { min: 0, ...(m.max ? { max: m.max } : {}) } }, plugins: { tooltip: { callbacks: { label: val } } } }),
       };
   }
 }
@@ -128,6 +138,72 @@ function scoreConfig(rows, selIdx, pick) {
       plugins: { selectedBand: { index: selIdx }, crosshair: { enabled: true }, tooltip: { callbacks: { title: (items) => dayTitle(dates[items[0].dataIndex]), label: (c) => `Nota: ${num(c.raw)} de 100` } } },
     }),
   };
+}
+
+const INTRA = {
+  hr: { title: "Frequência cardíaca no dia", about: "Batimentos ao longo das 24 horas de" },
+  bb: { title: "Body Battery no dia", about: "Leituras de energia ao longo de" },
+  hrv: { title: "HRV durante a noite", about: "Leituras de HRV na noite que terminou em" },
+};
+
+function intraOptions(unit, extra = {}) {
+  const muted = css("--muted");
+  return baseOptions({
+    interaction: { mode: "nearest", axis: "x", intersect: false },
+    scales: { x: { type: "linear", min: 0, max: 1440, ticks: { stepSize: 180, callback: (v) => hhmm(v), color: muted } }, y: { ticks: { callback: (v) => `${v}` } } },
+    plugins: { crosshair: { enabled: true }, tooltip: { callbacks: { title: (i) => hhmm(i[0].parsed.x), label: (c) => `${num(c.parsed.y)} ${unit}` } } },
+    ...extra,
+  });
+}
+
+async function loadIntraday(kind, sel, alive) {
+  let day;
+  try { day = await loadDay(sel); } catch (e) { document.getElementById("intra-extra")?.insertAdjacentHTML("beforeend", `<p class="note">Não foi possível carregar o detalhe do dia: ${esc(e.message)}</p>`); return; }
+  if (!alive() || !document.getElementById("c-intra")) return;
+  const text = css("--text");
+  const dataset = (pts) => ({ data: pts.map((p) => ({ x: p[0], y: p[1] })), borderColor: text, backgroundColor: "rgba(255,255,255,0.07)", borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: true, parsing: false });
+  const extra = document.getElementById("intra-extra");
+  const empty = (t) => { document.getElementById("c-intra").closest(".plot").outerHTML = `<p class="muted">${t}</p>`; };
+
+  if (kind === "hr") {
+    const pts = day.hr.points;
+    if (!pts.length) return empty("Sem batimentos registrados neste dia.");
+    mount("c-intra", { type: "line", data: { datasets: [dataset(pts)] }, options: intraOptions("bpm") });
+    // Tempo em cada zona, contando cada leitura como 2 minutos.
+    loadProfile().then((p) => {
+      if (!alive() || !p.zones) return;
+      const floors = p.zones.floors;
+      const mins = [0, 0, 0, 0, 0, 0];
+      for (const [, v] of pts) mins[floors.filter((f) => v >= f).length] += 2;
+      const names = ["Abaixo da zona 1", "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5"];
+      const colors = ["#2f2f2f", "#4a4a4a", "#6c6c6c", "#9a9a9a", "#cfcfcf", "#f4f4f4"];
+      const total = mins.reduce((a, b) => a + b, 0);
+      extra.innerHTML = barsHtml({ title: "Tempo em cada zona de frequência", items: mins.map((v, i) => ({ label: names[i], value: v, total, color: colors[i], text: `${minutesText(v)} · ${Math.round((v / total) * 100)}%` })) });
+    }).catch(() => {});
+  } else if (kind === "bb") {
+    const pts = day.bb.points;
+    if (!pts.length) return empty("Sem leituras de Body Battery neste dia.");
+    mount("c-intra", { type: "line", data: { datasets: [{ ...dataset(pts), pointRadius: 3 }] }, options: intraOptions("", { scales: { x: { type: "linear", min: 0, max: 1440, ticks: { stepSize: 180, callback: (v) => hhmm(v) } }, y: { min: 0, max: 100 } } }) });
+    const NAMES = { SLEEP: "Sono", ACTIVITY: "Treino", NAP: "Cochilo", RECOVERY: "Recuperação" };
+    const ev = day.bb.events || [];
+    if (ev.length) extra.innerHTML = `<dl class="facts" style="margin-top:20px">${ev.map((e) => `<div class="fact"><dt>${esc(NAMES[e.type] || e.type)}${e.minutes ? `, ${minutesText(e.minutes)}` : ""}</dt><dd class="num">${e.impact > 0 ? "+" : ""}${num(e.impact)}</dd></div>`).join("")}</dl>`;
+  } else {
+    const r = day.hrv.readings;
+    if (!r.length) return empty("Sem leituras de HRV nesta noite.");
+    const toMin = (t) => { const [a, b] = t.split(":").map(Number); return (a < 12 ? a + 24 : a) * 60 + b; };
+    const pts = r.map((x) => [toMin(x.t), x.v]);
+    const lo = pts[0][0], hi = pts[pts.length - 1][0];
+    const band = (v) => pts.map((p) => ({ x: p[0], y: v }));
+    mount("c-intra", {
+      type: "line",
+      data: { datasets: [
+        dataset(pts),
+        ...(day.hrv.low != null ? [{ data: band(day.hrv.low), borderColor: css("--muted"), borderDash: [4, 4], borderWidth: 1, pointRadius: 0, parsing: false }, { data: band(day.hrv.high), borderColor: css("--muted"), borderDash: [4, 4], borderWidth: 1, pointRadius: 0, parsing: false }] : []),
+      ] },
+      options: intraOptions("ms", { scales: { x: { type: "linear", min: lo, max: hi, ticks: { maxTicksLimit: 7, callback: (v) => hhmm(v) } }, y: { ticks: { callback: (v) => `${v}` } } }, plugins: { crosshair: { enabled: true }, tooltip: { filter: (c) => c.datasetIndex === 0, callbacks: { title: (i) => hhmm(i[0].parsed.x), label: (c) => `${num(c.parsed.y)} ms` } } } }),
+    });
+    if (day.hrv.low != null) extra.innerHTML = `<p class="muted" style="margin-top:12px">As linhas tracejadas mostram a sua faixa equilibrada, de ${num(day.hrv.low)} a ${num(day.hrv.high)} ms.</p>`;
+  }
 }
 
 export async function renderMetric(root, { id, q }, alive) {
@@ -168,7 +244,8 @@ export async function renderMetric(root, { id, q }, alive) {
   const dayDelta = mean == null ? null : row[m.key] - avg(withData.filter((x) => x.date !== sel).map((x) => x[m.key]));
   const idx = dates.indexOf(sel);
   const prevDay = dates[idx - 1], nextDay = dates[idx + 1];
-  const bars = m.bars ? m.bars(row) : null;
+  const groups = m.groups ? m.groups(row) : [];
+  const note = m.note ? m.note(row) : "";
 
   // Mapa de calor do ano inteiro
   const level = levelize(ov.days.map((d) => d[m.key]));
@@ -204,9 +281,16 @@ export async function renderMetric(root, { id, q }, alive) {
       </div>
       <div class="day-more">
         <dl class="facts">${m.facts(row).map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd></div>`).join("")}</dl>
-        ${bars ? barsHtml(bars) : ""}
+        ${note ? `<p class="note" style="margin-top:18px">${esc(note)}</p>` : ""}
+        ${groups.map(barsHtml).join("")}
       </div>
     </section>
+
+    ${m.intraday ? `<section class="section" id="intra-sec">
+      <div class="section-head"><div><h2>${INTRA[m.intraday].title}</h2><p>${INTRA[m.intraday].about} ${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}.</p></div></div>
+      <div class="plot sm"><canvas id="c-intra" role="img" aria-label="${INTRA[m.intraday].title}"></canvas></div>
+      <div id="intra-extra"></div>
+    </section>` : ""}
 
     <section class="section">
       <div class="section-head"><div><h2>Dia a dia</h2><p>Clique em um dia para ver os detalhes. Use as setas do teclado para andar entre os dias.</p></div></div>
@@ -241,5 +325,6 @@ export async function renderMetric(root, { id, q }, alive) {
   const pick = (d) => setTimeout(() => go(url(id, d, r, expanded), { replace: true }), 0);
   mount("c-main", chartConfig(m, rows, selIdx, pick));
   if (id === "sleep") mount("c-score", scoreConfig(rows, selIdx, pick));
+  if (m.intraday) loadIntraday(m.intraday, sel, alive);
   scrollHeatToEnd(root);
 }

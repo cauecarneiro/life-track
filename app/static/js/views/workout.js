@@ -2,7 +2,7 @@
 import { loadActivities, loadFit, hasFit } from "../api.js";
 import { mount, baseOptions, onCleanup, css } from "../charts.js";
 import { loadingHtml, barsHtml } from "../ui.js";
-import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, RUNS, icon } from "../util.js";
+import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js";
 
 const TE_LABEL = {
   RECOVERY: "recuperação", AEROBIC_BASE: "base aeróbica", TEMPO: "ritmo", LACTATE_THRESHOLD: "limiar",
@@ -41,6 +41,21 @@ export async function renderWorkout(root, { id }, alive) {
     a.kcal ? kpi("Gasto", num(a.kcal), "kcal") : "",
   ].join("");
 
+  const more = [
+    a.maxSpeed && ["Velocidade máxima", isRun ? `${pace(a.maxSpeed)} /km` : `${num(a.maxSpeed * 3.6, 1)} km/h`],
+    a.elevLoss != null && ["Descida", `${num(a.elevLoss)} m`],
+    a.minElev != null && ["Altitude", `${num(a.minElev)} a ${num(a.maxElev)} m`],
+    a.minTemp != null && ["Temperatura", `${num(a.minTemp)} a ${num(a.maxTemp)} °C`],
+    a.steps && ["Passos", num(a.steps)],
+    a.maxCadence && ["Cadência máxima", `${num(a.maxCadence)} ppm`],
+    a.stride && ["Passada média", `${num(a.stride / 100, 2)} m`],
+    (a.moderateMin || a.vigorousMin) && ["Minutos de intensidade", `${num(a.moderateMin || 0)} moderados, ${num(a.vigorousMin || 0)} vigorosos`],
+    a.teAnaerobic != null && ["Efeito anaeróbico", `${num(a.teAnaerobic, 1)} de 5`],
+    a.bbDiff != null && ["Body Battery", signed(a.bbDiff)],
+    a.waterMl && ["Perda de líquido estimada", `${num(a.waterMl)} mL`],
+    a.bmrKcal && ["Calorias de repouso no período", `${num(a.bmrKcal)} kcal`],
+  ].filter(Boolean);
+
   const dyn = [
     s.avgPower && ["Potência média", `${num(s.avgPower)} W`],
     s.normalizedPower && ["Potência normalizada", `${num(s.normalizedPower)} W`],
@@ -71,6 +86,8 @@ export async function renderWorkout(root, { id }, alive) {
     </div></div>
 
     <section class="kpis kpis-4">${kpis}</section>
+    ${more.length ? `<section class="section"><div class="section-head"><div><h2>Mais números</h2><p>Tudo o que a Garmin registrou deste treino.</p></div></div>
+      <dl class="facts">${more.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd></div>`).join("")}</dl></section>` : ""}
     ${hasGps ? '<div id="map" role="img" aria-label="Mapa do percurso"></div>' : ""}
     ${plot("c-pace", isRun ? "Ritmo" : "Velocidade", `${where} Quanto mais alto no gráfico, mais rápido.`)}
     ${plot("c-hr", "Frequência cardíaca", where, true)}

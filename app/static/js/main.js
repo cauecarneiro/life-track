@@ -3,7 +3,9 @@ import { setupCharts, destroyCharts } from "./charts.js";
 import { go, parseRoute } from "./nav.js";
 import { refreshAll } from "./api.js";
 import { emptyHtml, errorHtml } from "./ui.js";
-import { renderHome } from "./views/home.js";
+import { icon } from "./util.js";
+import { METRICS, ORDER } from "./metrics.js";
+import { renderHub } from "./views/hub.js";
 import { renderMetric, stepDay } from "./views/metric.js";
 import { renderWorkouts } from "./views/workouts.js";
 import { renderWorkout } from "./views/workout.js";
@@ -12,10 +14,21 @@ const view = document.getElementById("view");
 let token = 0;
 let lastPath = null;
 
+const NAV = [
+  ["home", "#/", "Início", "home"],
+  ["vitais", "#/vitais", "Sinais vitais", "pulse"],
+  ["corpo", "#/corpo", "Corpo", "body"],
+  ["nutricao", "#/nutricao", "Nutrição", "fork"],
+  ["sleep", "#/m/sleep", "Sono", "moon"],
+  ["workouts", "#/treinos", "Treinos", "dumbbell"],
+];
+document.getElementById("nav").innerHTML = NAV.map(([id, href, label, ic]) => `<a href="${href}" data-nav="${id}">${icon(ic)}${label}</a>`).join("");
+
 function markNav(segs) {
-  const section = segs[0] === "treinos" || segs[0] === "treino" ? "workouts" : "home";
-  document.querySelectorAll("[data-nav]").forEach((a) =>
-    a.dataset.nav === section ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  const [a, b] = segs;
+  const section = a === "treinos" || a === "treino" ? "workouts" : a === "m" && b === "sleep" ? "sleep" : ["vitais", "corpo", "nutricao"].includes(a) ? a : a === "m" && ["hrv", "rhr", "hr", "resp", "stress"].includes(b) ? "vitais" : a === "m" && ["battery", "floors"].includes(b) ? "corpo" : a === "m" && b === "calories" ? "nutricao" : "home";
+  document.querySelectorAll("[data-nav]").forEach((el) =>
+    el.dataset.nav === section ? el.setAttribute("aria-current", "page") : el.removeAttribute("aria-current"));
 }
 
 async function route() {
@@ -28,7 +41,8 @@ async function route() {
 
   try {
     const [section, arg] = r.segs;
-    if (!section) await renderHome(view, r, alive);
+    if (!section) await renderHub(view, r, alive, "home");
+    else if (["vitais", "corpo", "nutricao"].includes(section)) await renderHub(view, r, alive, section);
     else if (section === "m") await renderMetric(view, { id: arg, q: r.q }, alive);
     else if (section === "treinos") await renderWorkouts(view, r, alive);
     else if (section === "treino" && arg) await renderWorkout(view, { id: arg }, alive);
@@ -84,3 +98,37 @@ window.addEventListener("hashchange", route);
 window.addEventListener("app:route", route);
 setupCharts();
 route();
+
+// Cartões inteiros são clicáveis: Enter abre, como em um link.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.target.getAttribute?.("role") !== "link" || !e.target.dataset.go) return;
+  go(e.target.dataset.go);
+});
+
+// Busca: encontra um indicador ou uma página pelo nome.
+const input = document.getElementById("q");
+const found = document.getElementById("found");
+const norm = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const INDEX = [
+  ...ORDER.map((id) => [METRICS[id].label, `#/m/${id}`, "Indicador", METRICS[id].about]),
+  ["Sinais vitais", "#/vitais", "Página", "coração respiração oxigênio spo2 estresse"],
+  ["Corpo", "#/corpo", "Página", "peso idade física zonas energia bateria"],
+  ["Nutrição", "#/nutricao", "Página", "calorias comida alimentação água hidratação"],
+  ["Treinos", "#/treinos", "Página", "corrida caminhada trilha atividades"],
+  ["Peso", "#/corpo", "Corpo", ""], ["Idade física", "#/corpo", "Corpo", ""], ["Zonas de FC", "#/corpo", "Corpo", ""],
+  ["Água", "#/nutricao", "Nutrição", "hidratação"], ["Oxigênio (SpO2)", "#/vitais", "Sinais vitais", "pulse ox"],
+  ["Pontos de intensidade", "#/m/intensity", "Indicador", "esforço minutos"],
+];
+function search() {
+  const t = norm(input.value.trim());
+  const hits = t ? INDEX.filter(([l, , , k]) => norm(`${l} ${k}`).includes(t)).slice(0, 6) : [];
+  found.innerHTML = hits.map(([l, h, kind], i) => `<li><a href="${h}" ${i === 0 ? 'aria-selected="true"' : ""}>${l}<span>${kind}</span></a></li>`).join("");
+  found.hidden = !hits.length;
+}
+input.addEventListener("input", search);
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { input.value = ""; search(); input.blur(); }
+  if (e.key === "Enter") { const a = found.querySelector("a"); if (a) { go(a.getAttribute("href")); input.value = ""; search(); input.blur(); } }
+});
+found.addEventListener("click", () => { input.value = ""; search(); });
+document.addEventListener("click", (e) => { if (!e.target.closest(".search")) found.hidden = true; });
