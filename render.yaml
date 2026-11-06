@@ -1,0 +1,16 @@
+# Plano grátis do Render: o serviço dorme após 15 min sem uso e acorda na próxima visita.
+# A chave da Garmin e a senha do painel ficam só no painel do Render (sync: false), nunca no Git.
+services:
+  - type: web
+    name: life-track
+    runtime: docker
+    plan: free
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: GARMIN_PERSONAL_API_KEY
+        sync: false
+      - key: APP_PASSWORD
+        sync: false

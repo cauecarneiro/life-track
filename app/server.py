@@ -1,12 +1,15 @@
-"""Servidor local do Life Track.
+"""Servidor do Life Track (local ou hospedado).
 
 Busca na API Pessoal da Garmin sob demanda e entrega JSON pronto para a tela.
 Não grava nada em disco: o cache fica só na memória e some ao reiniciar.
 """
 
+import base64
 import io
 import math
+import os
 import re
+import secrets
 import threading
 import time
 import zipfile
@@ -15,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fitparse import FitFile
 from garmin_personal_api import (
@@ -405,6 +408,42 @@ def parse_fit(zip_bytes: bytes) -> dict:
 # ------------------------------------------------------------------------ rotas
 
 app = FastAPI(title="Life Track")
+
+# Hospedado, o painel exige senha (APP_PASSWORD). Sem a variável, fica aberto, como no uso local.
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
+_failures: dict[str, deque[float]] = {}
+
+
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    return {"ok": True}
+
+
+@app.middleware("http")
+async def require_password(request: Request, call_next):
+    if not APP_PASSWORD or request.url.path == "/healthz":
+        return await call_next(request)
+    ip = request.client.host if request.client else "?"
+    tries = _failures.setdefault(ip, deque())
+    now = time.monotonic()
+    while tries and now - tries[0] > 600:
+        tries.popleft()
+    if len(tries) >= 10:
+        return Response("Muitas tentativas. Espere 10 minutos.", status_code=429)
+    header = request.headers.get("authorization", "")
+    if header.lower().startswith("basic "):
+        try:
+            _, _, given = base64.b64decode(header[6:]).decode("utf-8").partition(":")
+        except ValueError:
+            given = ""
+        if secrets.compare_digest(given.encode(), APP_PASSWORD.encode()):
+            return await call_next(request)
+        tries.append(now)
+    return Response(
+        "Senha necessária.",
+        status_code=401,
+        headers={"WWW-Authenticate": 'Basic realm="Life Track", charset="UTF-8"'},
+    )
 
 
 # ------------------------------------------------------------------ detalhe de um dia

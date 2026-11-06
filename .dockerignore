@@ -1,0 +1,7 @@
+.venv
+.git
+data
+notas-privadas
+docs
+**/__pycache__
+.env*
