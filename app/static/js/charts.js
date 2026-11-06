@@ -41,7 +41,7 @@ const selectedBand = {
     const step = n > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : chartArea.width;
     const cx = x.getPixelForValue(opts.index);
     ctx.save();
-    ctx.fillStyle = "rgba(10,132,255,0.18)";
+    ctx.fillStyle = "rgba(42,173,187,0.18)";
     ctx.fillRect(cx - step / 2, chartArea.top, step, chartArea.bottom - chartArea.top);
     ctx.restore();
   },
