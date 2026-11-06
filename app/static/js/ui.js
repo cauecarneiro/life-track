@@ -1,5 +1,5 @@
 // Peças de interface compartilhadas entre as telas.
-import { esc, addDays } from "./util.js";
+import { esc, addDays } from "./util.js?v=3";
 
 export const loadingHtml = (text) => `<div class="empty"><p class="pulse">${esc(text)}</p></div>`;
 

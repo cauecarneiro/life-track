@@ -1,11 +1,11 @@
 // Indicador: um dia em destaque, outros dias no gráfico, no mapa de calor e na tabela.
-import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js";
-import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js";
-import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js";
-import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js";
-import { loadingHtml, emptyHtml, fillDays, barsHtml } from "../ui.js";
-import { go } from "../nav.js";
-import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js";
+import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js?v=3";
+import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js?v=3";
+import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js?v=3";
+import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js?v=3";
+import { loadingHtml, emptyHtml, fillDays, barsHtml } from "../ui.js?v=3";
+import { go } from "../nav.js?v=3";
+import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js?v=3";
 
 const RANGES = [[30, "30 dias"], [90, "90 dias"], [180, "6 meses"], [365, "1 ano"]];
 const url = (id, d, r, x) => `#/m/${id}?d=${d}&r=${r}${x ? "&x=1" : ""}`;

@@ -1,11 +1,11 @@
 // Páginas de resumo (início, sinais vitais, corpo, nutrição): cartões do dia escolhido.
 // O dia vem de ?d=AAAA-MM-DD. Dados que exigem outra chamada (curva do dia, perfil) entram depois, sem travar a tela.
-import { loadOverview, loadActivities, loadDay, loadProfile, hasOverview, hasActivities } from "../api.js";
-import * as C from "../cards.js";
-import { heatmap, scrollHeatToEnd } from "../heatmap.js";
-import { trainingCells, totals, between } from "../acts.js";
-import { loadingHtml, fillDays } from "../ui.js";
-import { esc, num, fmtDay, today, addDays, diffDays, duration, typeName, icon, cap } from "../util.js";
+import { loadOverview, loadActivities, loadDay, loadProfile, hasOverview, hasActivities } from "../api.js?v=3";
+import * as C from "../cards.js?v=3";
+import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=3";
+import { trainingCells, totals, between } from "../acts.js?v=3";
+import { loadingHtml, fillDays } from "../ui.js?v=3";
+import { esc, num, fmtDay, today, addDays, diffDays, duration, typeName, icon, cap } from "../util.js?v=3";
 
 const PAGES = {
   home: { base: "#/", title: null },

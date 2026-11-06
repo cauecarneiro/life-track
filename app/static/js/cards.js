@@ -1,6 +1,6 @@
 // Cartões da tela inicial e das páginas de resumo. Cada um mostra um dado, o dia escolhido e a tendência recente.
-import { METRICS, QUALITY, normalRange, statusOf } from "./metrics.js";
-import { esc, num, avg, fmtDay, addDays, minutesText, sleepTime, hhmm, cap, icon, parseDay, typeName, duration } from "./util.js";
+import { METRICS, QUALITY, normalRange, statusOf } from "./metrics.js?v=3";
+import { esc, num, avg, fmtDay, addDays, minutesText, sleepTime, hhmm, cap, icon, parseDay, typeName, duration } from "./util.js?v=3";
 
 const has = (v) => v != null && !Number.isNaN(v);
 const WEEKDAY = ["D", "S", "T", "Q", "Q", "S", "S"];

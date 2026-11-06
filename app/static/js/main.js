@@ -1,14 +1,14 @@
 // Ponto de entrada: rotas, atalhos de teclado, dicas flutuantes e o botão de atualizar.
-import { setupCharts, destroyCharts } from "./charts.js";
-import { go, parseRoute } from "./nav.js";
-import { refreshAll } from "./api.js";
-import { emptyHtml, errorHtml } from "./ui.js";
-import { icon } from "./util.js";
-import { METRICS, ORDER } from "./metrics.js";
-import { renderHub } from "./views/hub.js";
-import { renderMetric, stepDay } from "./views/metric.js";
-import { renderWorkouts } from "./views/workouts.js";
-import { renderWorkout } from "./views/workout.js";
+import { setupCharts, destroyCharts } from "./charts.js?v=3";
+import { go, parseRoute } from "./nav.js?v=3";
+import { refreshAll } from "./api.js?v=3";
+import { emptyHtml, errorHtml } from "./ui.js?v=3";
+import { icon } from "./util.js?v=3";
+import { METRICS, ORDER } from "./metrics.js?v=3";
+import { renderHub } from "./views/hub.js?v=3";
+import { renderMetric, stepDay } from "./views/metric.js?v=3";
+import { renderWorkouts } from "./views/workouts.js?v=3";
+import { renderWorkout } from "./views/workout.js?v=3";
 
 const view = document.getElementById("view");
 let token = 0;

@@ -1,6 +1,6 @@
 // Mapa de calor em estilo calendário (semanas em colunas, domingo no topo).
 // Células vazias são hachuradas; os níveis 1 a 4 são uma escala de cinza.
-import { esc, parseDay, addDays } from "./util.js";
+import { esc, parseDay, addDays } from "./util.js?v=3";
 
 const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 

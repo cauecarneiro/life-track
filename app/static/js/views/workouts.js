@@ -1,10 +1,10 @@
 // Treinos: totais, ano de atividade, volume por semana e a lista completa.
-import { loadActivities, hasActivities } from "../api.js";
-import { mount, baseOptions, css } from "../charts.js";
-import { heatmap, scrollHeatToEnd } from "../heatmap.js";
-import { trainingCells, totals, between } from "../acts.js";
-import { loadingHtml, emptyHtml } from "../ui.js";
-import { esc, num, sum, duration, pace, fmtDay, today, addDays, parseDay, typeName, RUNS, icon } from "../util.js";
+import { loadActivities, hasActivities } from "../api.js?v=3";
+import { mount, baseOptions, css } from "../charts.js?v=3";
+import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=3";
+import { trainingCells, totals, between } from "../acts.js?v=3";
+import { loadingHtml, emptyHtml } from "../ui.js?v=3";
+import { esc, num, sum, duration, pace, fmtDay, today, addDays, parseDay, typeName, RUNS, icon } from "../util.js?v=3";
 
 const RANGES = [[30, "30 dias"], [90, "90 dias"], [365, "1 ano"], [3650, "Tudo"]];
 const href = (r, t) => `#/treinos?r=${r}&t=${t}`;

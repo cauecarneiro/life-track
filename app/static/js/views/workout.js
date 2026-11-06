@@ -1,8 +1,8 @@
 // Um treino: números, percurso, gráficos ao longo da distância, zonas e voltas.
-import { loadActivities, loadFit, hasFit } from "../api.js";
-import { mount, baseOptions, onCleanup, css } from "../charts.js";
-import { loadingHtml, barsHtml } from "../ui.js";
-import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js";
+import { loadActivities, loadFit, hasFit } from "../api.js?v=3";
+import { mount, baseOptions, onCleanup, css } from "../charts.js?v=3";
+import { loadingHtml, barsHtml } from "../ui.js?v=3";
+import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js?v=3";
 
 const TE_LABEL = {
   RECOVERY: "recuperação", AEROBIC_BASE: "base aeróbica", TEMPO: "ritmo", LACTATE_THRESHOLD: "limiar",
