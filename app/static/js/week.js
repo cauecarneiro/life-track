@@ -241,19 +241,25 @@ export function weekHtml(m, rows, prev, ctx, middle = "") {
     <section class="card wk">
       <div class="wk-top">
         <div>
-          <span class="muted">${esc(cfg.avgLabel || "Média")}</span>
-          <div class="val"><b class="num">${has(avgV) ? m.fmt(avgV) : "—"}</b>${m.unit && has(avgV) ? `<small>${m.unit}</small>` : ""}</div>
-          <span class="muted">${esc(range)}${delta ? ` · ${esc(delta)} vs. semana anterior` : ""}</span>
+          <span class="muted">Semana</span>
+          <h2 class="wk-range">${esc(range)}</h2>
         </div>
         <div class="stepper">
           <button class="step" type="button" ${ctx.weekNav.prev ? `data-go="${ctx.weekNav.prev}" data-replace` : "disabled"} aria-label="Semana anterior">${icon("chevLeft")}</button>
           <button class="step" type="button" ${ctx.weekNav.next ? `data-go="${ctx.weekNav.next}" data-replace` : "disabled"} aria-label="Próxima semana">${icon("chevRight")}</button>
         </div>
       </div>
-      <dl class="wk-sum">${sumList.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd class="num">${esc(val)}</dd></div>`).join("")}</dl>
       <div class="wk-plot${yaxis ? " yaxis" : ""} k-${cfg.kind}">${axis}${chart}</div>
       <div class="wk-x${yaxis ? " yaxis" : ""}">${xlab}</div>
       ${legend}
+      <div class="wk-foot">
+        <div class="wk-avg">
+          <span class="muted">${esc(cfg.avgLabel || "Média")} da semana</span>
+          <div class="val"><b class="num">${has(avgV) ? m.fmt(avgV) : "—"}</b>${m.unit && has(avgV) ? `<small>${m.unit}</small>` : ""}</div>
+          ${delta ? `<span class="muted">${esc(delta)} vs. semana anterior</span>` : ""}
+        </div>
+        <dl class="wk-sum">${sumList.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd class="num">${esc(val)}</dd></div>`).join("")}</dl>
+      </div>
     </section>
     ${middle}
     <section class="card wk-days">

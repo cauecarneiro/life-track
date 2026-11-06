@@ -213,7 +213,7 @@ async function loadIntraday(kind, sel, alive) {
 
 function dayPanel(m, id, row, sel, r, rows, dates) {
   if (!row || row[m.key] == null) {
-    return `<section class="day"><div class="day-main"><span class="when">${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}</span><p class="muted" style="margin-top:10px">Sem ${esc(m.label.toLowerCase())} registrado neste dia.</p></div></section>`;
+    return { extra: "", main: `<section class="day"><div class="day-main"><span class="when">${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}</span><p class="muted" style="margin-top:10px">Sem ${esc(m.label.toLowerCase())} registrado neste dia.</p></div></section>` };
   }
   const range = normalRange(m, rows.filter((x) => x.date !== sel), row);
   const status = statusOf(row[m.key], range);
@@ -222,7 +222,7 @@ function dayPanel(m, id, row, sel, r, rows, dates) {
   const prevDay = dates[idx - 1], nextDay = dates[idx + 1];
   const groups = m.groups ? m.groups(row) : [];
   const note = m.note ? m.note(row) : "";
-  return `<section class="day" aria-labelledby="day-t">
+  const main = `<section class="day" aria-labelledby="day-t">
       <h2 class="sr" id="day-t">Detalhes do dia</h2>
       <div class="day-main">
         <div class="daynav">
@@ -233,17 +233,18 @@ function dayPanel(m, id, row, sel, r, rows, dates) {
         <div class="big num">${m.fmt(row[m.key])}${m.unit ? `<small>${m.unit}</small>` : ""}</div>
         <p class="status"><i class="dot tone-${tone}"></i><span>${status ? `${STATUS_TEXT[status]}, entre ${m.fmt(range[0])} e ${m.fmt(range[1])}${m.unit ? ` ${m.unit}` : ""}.` : "Ainda sem histórico suficiente para definir o seu normal."}</span></p>
         ${note ? `<p class="muted" style="margin-top:10px">${esc(note)}</p>` : ""}
+        ${groups.map(barsHtml).join("")}
       </div>
       <div class="day-more">
         <dl class="facts">${m.facts(row).map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd></div>`).join("")}</dl>
-        ${groups.map(barsHtml).join("")}
       </div>
-    </section>
-    ${m.intraday ? `<section class="section" id="intra-sec">
+    </section>`;
+  const extra = `${m.intraday ? `<section class="section" id="intra-sec">
       <div class="section-head"><div><h2>${INTRA[m.intraday].title}</h2><p>${INTRA[m.intraday].about} ${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}.</p></div></div>
       <div class="plot sm"><canvas id="c-intra" role="img" aria-label="${INTRA[m.intraday].title}"></canvas></div>
       <div id="intra-extra"></div>
     </section>` : ""}`;
+  return { main, extra };
 }
 
 export async function renderMetric(root, { id, q }, alive) {
@@ -311,7 +312,8 @@ export async function renderMetric(root, { id, q }, alive) {
       },
     };
     const window30 = fillDays(ov.days, addDays(sel, -30), sel);
-    root.innerHTML = `${head}${weekHtml(m, rows, prev, ctx, dayPanel(m, id, byDate.get(sel), sel, 7, window30, dates))}${heat}`;
+    const day = dayPanel(m, id, byDate.get(sel), sel, 7, window30, dates);
+    root.innerHTML = `${head}${day.main}${weekHtml(m, rows, prev, ctx, day.extra)}${heat}`;
   } else {
     const start = addDays(ov.end, -(r - 1));
     const rows = fillDays(ov.days, start, ov.end);
@@ -327,7 +329,9 @@ export async function renderMetric(root, { id, q }, alive) {
     const shown = expanded ? list : list.slice(0, 14);
     const [c1, c2] = m.cols;
 
+    const day = dayPanel(m, id, byDate.get(sel), sel, r, rows, dates);
     root.innerHTML = `${head}
+      ${day.main}
       <section class="stats">
         <div class="stat"><span class="muted">Média</span><span class="num">${withUnit(m, mean)}</span>${prevMean != null ? `<span class="muted">${m.delta(mean - prevMean)} vs. período anterior</span>` : ""}</div>
         <div class="stat"><span class="muted">Mais baixo</span><span class="num">${withUnit(m, lo[m.key])}</span><span class="muted">${esc(fmtDay(lo.date))}</span></div>
@@ -339,7 +343,7 @@ export async function renderMetric(root, { id, q }, alive) {
         <div class="plot"><canvas id="c-main" role="img" aria-label="${esc(m.label)} por dia"></canvas></div>
         ${id === "sleep" ? `<div class="section-head sub"><div><h2>Nota de sono</h2></div></div><div class="plot sm"><canvas id="c-score" role="img" aria-label="Nota de sono por dia"></canvas></div>` : ""}
       </section>
-      ${dayPanel(m, id, byDate.get(sel), sel, r, rows, dates)}
+      ${day.extra}
       ${heat}
       <section class="section">
         <div class="section-head"><div><h2>Todos os dias</h2><p>${withData.length} dias nesse período.</p></div></div>

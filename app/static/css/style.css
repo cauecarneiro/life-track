@@ -278,15 +278,19 @@ a.card:hover .go { transform: translateX(2px); color: var(--muted); }
 
 /* ------------------------------------------------------------- visão semanal */
 
-.wk-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.wk-top .muted { font-size: 13px; }
+.card.wk { margin-top: var(--gap); }
+.wk-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.wk-top .muted { font-size: 12px; }
+.wk-range { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.wk-foot { display: grid; grid-template-columns: minmax(200px, 0.8fr) minmax(0, 2fr); gap: 20px 32px; align-items: end; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--sep); }
+.wk-avg .muted { font-size: 13px; }
 .wk .val { margin: 2px 0 2px; }
-.wk .val b { font-size: 44px; }
+.wk .val b { font-size: 34px; }
 .wk .val small { font-size: 17px; }
-.wk-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 20px; margin-top: 18px; padding: 14px 0; border-top: 1px solid var(--sep); border-bottom: 1px solid var(--sep); }
+.wk-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px 20px; }
 .wk-sum dt { color: var(--muted); font-size: 12px; }
 .wk-sum dd { margin-top: 2px; font-family: var(--rounded); font-size: 17px; font-weight: 600; }
-.wk-plot { position: relative; height: 230px; margin-top: 36px; }
+.wk-plot { position: relative; height: 230px; margin-top: 40px; }
 .wk-area { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .wk-plot.yaxis .wk-area { left: 48px; }
 .wk-axis { position: absolute; left: 0; top: 0; bottom: 0; width: 44px; }
@@ -368,7 +372,7 @@ button.wk-row.on { background-color: var(--fill2); }
 
 /* ------------------------------------------------------------- dia em destaque */
 
-.day { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 48px; padding: 22px 24px; }
+.day { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; padding: 22px 24px; }
 .daynav { display: flex; align-items: center; gap: 2px; margin-left: -8px; }
 .step { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; color: var(--accent); transition: background-color 0.15s, transform 0.15s var(--out), opacity 0.15s; }
 .step:not(:disabled):hover { background: var(--fill3); }
@@ -384,9 +388,10 @@ button.wk-row.on { background-color: var(--fill2); }
 .fact { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--sep); font-size: 14px; }
 .fact dt { color: var(--muted); }
 .fact dd { text-align: right; font-weight: 500; }
-.bars { margin-top: 22px; }
+.bars { margin-top: 20px; }
+.day-main .bars:first-of-type { margin-top: 22px; }
 .bars h3 { margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 500; }
-.bar-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 7px 0; font-size: 14px; }
+.bar-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 5px 0; font-size: 14px; }
 .bar-row > span:last-child { min-width: 92px; color: var(--muted); text-align: right; font-size: 13px; }
 .track { display: block; height: 6px; border-radius: 3px; background: var(--fill2); overflow: hidden; }
 .track i { display: block; height: 100%; border-radius: 3px; transform-origin: left; animation: growx 0.7s var(--out) both; }
@@ -522,8 +527,8 @@ a.cell:hover, a.cell:focus-visible { outline-color: var(--muted); transform: sca
   #map { height: 280px; }
   .bar-row { grid-template-columns: 84px minmax(0, 1fr) auto; gap: 10px; }
   .wk-plot { height: 200px; }
+  .wk-foot { grid-template-columns: minmax(0, 1fr); }
   .wk-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .wk .val b { font-size: 38px; }
   .wk-v { font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {

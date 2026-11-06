@@ -22,7 +22,7 @@ Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fon
 - Cartões do mesmo tamanho, nesta ordem: Body Battery, sono, passos, estresse, calorias, equilíbrio, frequência cardíaca (batimentos do dia inteiro), HRV, FC de repouso, esforço, respiração, peso, idade física, zonas de FC, hidratação e calendário.
 - "Sua semana" com os indicadores principais lado a lado, o mapa de calor de treinos e as atividades recentes.
 
-**Cada indicador**: abre na **semana**, com a média, o resumo e um gráfico próprio para cada dado:
+**Cada indicador** abre com o **dia escolhido no topo** (valor grande, todos os detalhes e, no sono, as fases e as notas), depois a **semana** com um gráfico próprio para cada dado, e só então as médias da semana:
 - Sono: uma barra por noite, da hora em que dormiu até a hora em que acordou, com a duração e a nota.
 - Passos e andares: barras com a meta e a média.
 - Estresse: a composição de cada dia (repouso, baixo, médio, alto).
