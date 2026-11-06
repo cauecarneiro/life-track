@@ -127,7 +127,7 @@ O navegador abre em <http://127.0.0.1:8765>. Para mudar a porta: `PORT=9000 ./in
 - **A chave expira.** Depois do prazo, crie outra e substitua o arquivo.
 - **Histórico.** Os dados começam quando o relógio começou a gravar na sua conta. Para trazer algo mais antigo, peça a exportação completa da conta no Garmin Connect.
 - **Campos proprietários.** A Garmin pode remover alguns campos (como VO2 máx.) dos arquivos FIT entregues pela API.
-- **Limites de requisições** não são divulgados.
+- **Limite de consultas:** a API aceita 100 por minuto. O servidor fica abaixo disso (80 por minuto), espera a vez quando precisa, repete sozinho se a Garmin responder 429 e guarda em cache os dias já fechados, então o botão de atualizar só busca de novo o que pode ter mudado.
 
 Detalhes e fontes em [docs/pesquisa-de-apis.md](docs/pesquisa-de-apis.md).
 

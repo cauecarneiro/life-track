@@ -10,10 +10,12 @@ export const skeletonHtml = (n = 8) => `<div class="page-head" role="status"><di
 export const emptyHtml = (title, text) => `<div class="empty"><h2>${esc(title)}</h2><p>${esc(text)}</p></div>`;
 
 export const errorHtml = (e) =>
-  emptyHtml(
-    "Não foi possível buscar os dados na Garmin",
-    `${e.message}. Confira se o servidor está rodando e se a chave ainda vale em Garmin Connect, Configurações, Chave de API pessoal. Depois clique em atualizar, no canto superior direito.`,
-  );
+  /\b429\b/.test(e.message)
+    ? emptyHtml("A Garmin pediu uma pausa", "A API pessoal aceita 100 consultas por minuto e o limite foi atingido. Espere cerca de um minuto e toque em atualizar na barra lateral.")
+    : emptyHtml(
+        "Não foi possível buscar os dados na Garmin",
+        `${e.message}. Confira se o servidor está rodando e se a chave ainda vale em Garmin Connect, Configurações, Chave de API pessoal. Depois toque em atualizar na barra lateral.`,
+      );
 
 /** Uma linha por dia entre start e end; dias sem dado viram { date }. */
 export function fillDays(days, start, end) {

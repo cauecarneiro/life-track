@@ -80,7 +80,6 @@ export async function renderHub(root, route, alive, page = "home") {
   if (!hasOverview(span) || (needActs && !hasActivities())) root.innerHTML = skeletonHtml(page === "home" ? 8 : 4);
   const [ov, acts] = await Promise.all([loadOverview(span), needActs ? loadActivities() : null]);
   if (!alive()) return;
-  loadOverview(365).catch(() => {}); // aquece o cache para abrir os indicadores rápido
 
   const byDate = new Map(ov.days.map((d) => [d.date, d]));
   const latest = [...ov.days].reverse().find(hasAny)?.date;

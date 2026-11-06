@@ -6,9 +6,11 @@ Não grava nada em disco: o cache fica só na memória e some ao reiniciar.
 
 import io
 import math
+import re
 import threading
 import time
 import zipfile
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -32,12 +34,34 @@ TTL_DETAIL = 3600
 SEMICIRCLE = 180 / 2**31
 
 
+class Limiter:
+    """A API pessoal aceita 100 consultas por minuto; o painel fica abaixo disso e espera a vez."""
+
+    def __init__(self, limit: int = 80, window: float = 60.0) -> None:
+        self.limit, self.window = limit, window
+        self._stamps: deque[float] = deque()
+        self._lock = threading.Lock()
+
+    def wait(self) -> None:
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                while self._stamps and now - self._stamps[0] > self.window:
+                    self._stamps.popleft()
+                if len(self._stamps) < self.limit:
+                    self._stamps.append(now)
+                    return
+                delay = self.window - (now - self._stamps[0]) + 0.05
+            time.sleep(delay)
+
+
 class Garmin:
-    """Cliente da Garmin com renovação automática do token (válido por 24 h)."""
+    """Cliente da Garmin com renovação automática do token (válido por 24 h) e controle de ritmo."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._client: GarminPersonalApiClient | None = None
+        self._limiter = Limiter()
 
     def _login(self, force: bool = False) -> GarminPersonalApiClient:
         key = resolve_api_key()
@@ -49,22 +73,33 @@ class Garmin:
     def call(self, method: str, *args, **kwargs):
         with self._lock:
             client = self._client or self._login()
-        try:
-            return getattr(client, method)(*args, **kwargs)
-        except HttpError as exc:
-            if exc.status_code != 401:
+        relogged = False
+        for attempt in range(4):
+            self._limiter.wait()
+            try:
+                return getattr(client, method)(*args, **kwargs)
+            except HttpError as exc:
+                if exc.status_code == 401 and not relogged:
+                    relogged = True
+                    with self._lock:
+                        client = self._login(force=True)
+                    continue
+                if exc.status_code == 429 and attempt < 3:
+                    # A Garmin diz em quantos segundos tentar de novo.
+                    m = re.search(r'retryInSeconds"?\s*:\s*(\d+)', str(exc))
+                    time.sleep(min(70, int(m.group(1)) + 1 if m else 20))
+                    continue
                 raise
-        with self._lock:
-            client = self._login(force=True)
-        return getattr(client, method)(*args, **kwargs)
+        raise RuntimeError("sem resposta da Garmin")
 
 
 garmin = Garmin()
-_cache: dict[str, tuple[float, object]] = {}
+_cache: dict[str, tuple[float, object, bool]] = {}
 _cache_lock = threading.Lock()
 
 
-def cached(key: str, ttl: int, build):
+def cached(key: str, ttl: int, build, stable: bool = False):
+    """stable: dado de dias que já fecharam; o botão de atualizar não o apaga."""
     now = time.time()
     with _cache_lock:
         hit = _cache.get(key)
@@ -72,16 +107,16 @@ def cached(key: str, ttl: int, build):
             return hit[1]
     value = build()
     with _cache_lock:
-        _cache[key] = (now, value)
+        _cache[key] = (now, value, stable)
     return value
 
 
 def windows(start: date, end: date):
-    cursor = start
-    while cursor <= end:
-        stop = min(cursor + timedelta(days=CHUNK_DAYS - 1), end)
-        yield cursor, stop
-        cursor = stop + timedelta(days=1)
+    """Pedaços de 31 dias contados a partir de `end`: 30 e 365 dias compartilham os mesmos."""
+    stop = end
+    while stop >= start:
+        yield stop - timedelta(days=CHUNK_DAYS - 1), stop
+        stop -= timedelta(days=CHUNK_DAYS)
 
 
 def clock(ms: int | None) -> str | None:
@@ -106,18 +141,20 @@ def minutes(seconds: float | None) -> int | None:
 # ---------------------------------------------------------------- visão geral
 
 
+def fetch_chunk(a: date, b: date):
+    """Sono, HRV e resumo diário de um pedaço. Pedaços do passado ficam 6 h em cache."""
+    closed = b < date.today() - timedelta(days=1)
+    return cached(
+        f"chunk:{a}:{b}",
+        6 * 3600 if closed else TTL_OVERVIEW,
+        lambda: tuple(garmin.call(m, a, b) for m in ("get_daily_sleep_summaries", "get_daily_hrv_summaries", "get_daily_summaries")),
+        stable=closed,
+    )
+
+
 def build_overview(start: date, end: date) -> dict:
-    jobs = []
-    with ThreadPoolExecutor(max_workers=6) as pool:
-        for a, b in windows(start, end):
-            jobs.append(
-                (
-                    pool.submit(garmin.call, "get_daily_sleep_summaries", a, b),
-                    pool.submit(garmin.call, "get_daily_hrv_summaries", a, b),
-                    pool.submit(garmin.call, "get_daily_summaries", a, b),
-                )
-            )
-        results = [tuple(f.result() for f in trio) for trio in jobs]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda w: fetch_chunk(*w), windows(start, end)))
 
     rows: dict[str, dict] = {}
 
@@ -213,7 +250,7 @@ def build_overview(start: date, end: date) -> dict:
             if mod is not None or vig is not None:
                 r["intensity"] = (mod or 0) + 2 * (vig or 0)  # vigorosos contam em dobro na meta da Garmin
 
-    days = sorted(rows.values(), key=lambda r: r["date"])
+    days = sorted((r for r in rows.values() if start.isoformat() <= r["date"] <= end.isoformat()), key=lambda r: r["date"])
     return {"start": start.isoformat(), "end": end.isoformat(), "days": days}
 
 
@@ -544,6 +581,8 @@ def garmin_error(_, exc: GarminPersonalApiError):
     from fastapi.responses import JSONResponse
 
     status = getattr(exc, "status_code", None) or 502
+    if status == 429:
+        return JSONResponse({"error": "429: a Garmin limita as consultas a 100 por minuto. Espere cerca de um minuto e tente de novo."}, status_code=429)
     return JSONResponse({"error": str(exc)}, status_code=status)
 
 
@@ -577,7 +616,7 @@ def activity_detail(activity_id: int):
 @app.get("/api/day/{day}")
 def day_detail(day: date):
     ttl = TTL_ACTIVITIES if day >= date.today() else TTL_DETAIL
-    return cached(f"day:{day}", ttl, lambda: build_day(day))
+    return cached(f"day:{day}", ttl, lambda: build_day(day), stable=day < date.today() - timedelta(days=1))
 
 
 @app.get("/api/profile")
@@ -588,7 +627,8 @@ def profile():
 @app.post("/api/refresh")
 def refresh():
     with _cache_lock:
-        _cache.clear()
+        for k in [k for k, v in _cache.items() if not v[2]]:
+            del _cache[k]
     return {"ok": True}
 
 
