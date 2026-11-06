@@ -15,12 +15,10 @@ export const CATEGORIES = {
     cards: (ctx) => ["steps", "calories", "intensity", "floors"].map((id) => C.metricCard(id, ctx)), workouts: true },
   coracao: { title: "Coração", icon: "heart", about: "Frequência cardíaca, variabilidade, oxigênio e zonas.", metrics: ["hr", "rhr", "hrv"],
     cards: (ctx) => [C.hrCard(ctx, { span: "span2" }), C.hrvNightCard(ctx, "span2"), C.metricCard("rhr", ctx), C.metricCard("hrv", ctx), C.zonesCard(), C.spo2Card()] },
-  corpo: { title: "Corpo", icon: "body", about: "Peso, composição corporal e idade física.", metrics: [],
-    cards: (ctx) => [C.weightCard(ctx, { span: "span2" }), C.fitnessCard("span2")] },
-  nutricao: { title: "Nutrição", icon: "fork", about: "Calorias gastas e consumidas, água e diário alimentar.", metrics: ["calories"],
-    cards: (ctx) => [C.caloriesCard(ctx, { span: "span2" }), C.foodCard(ctx, "span2"), C.waterCard("span2"), C.metricCard("calories", ctx, { span: "span2" })] },
+  corpo: { title: "Corpo", icon: "body", about: "Peso, idade física e hidratação.", metrics: [],
+    cards: (ctx) => [C.weightCard(ctx, { span: "c4" }), C.fitnessCard("c4"), C.waterCard("c4")] },
 };
-export const LEGACY = { vitais: "coracao" };
+export const LEGACY = { vitais: "coracao", nutricao: "corpo" };
 
 // Cartões que podem ficar no resumo, na ordem em que aparecem. Quem escolhe quais aparecem é você ("Editar").
 const HOME = [
@@ -36,7 +34,7 @@ function hiddenCards() {
 function saveHidden(list) { try { localStorage.setItem(STORE, JSON.stringify(list)); } catch { /* sem armazenamento: vale só nesta visita */ } }
 const homeCard = (id, ctx) => ({ hr: () => C.hrCard(ctx), weight: () => C.weightCard(ctx), fitness: () => C.fitnessCard(), zones: () => C.zonesCard(), water: () => C.waterCard(), spo2: () => C.spo2Card() }[id] || (() => C.metricCard(id, ctx)))();
 
-const DAY_FILL = ["hr", "food", "foodlog", "spo2", "bbcurve", "hrvnight"];
+const DAY_FILL = ["hr", "spo2", "bbcurve", "hrvnight"];
 const PROFILE_FILL = ["weight", "fitness", "zones", "water"];
 const hasAny = (r) => r && (r.sleepH != null || r.hrv != null);
 
@@ -143,8 +141,6 @@ export async function renderHub(root, route, alive, page = "home") {
     loadDay(sel).then((day) => {
       if (!alive()) return;
       el("hr").forEach((n) => C.fillHr(n, day, ctx));
-      el("food").forEach((n) => C.fillFood(n, day));
-      el("foodlog").forEach((n) => C.fillFoodLog(n, day, ctx));
       el("spo2").forEach((n) => C.fillSpo2(n, day, ctx));
       el("bbcurve").forEach((n) => C.fillBbCurve(n, day, ctx));
       el("hrvnight").forEach((n) => C.fillHrvNight(n, day));

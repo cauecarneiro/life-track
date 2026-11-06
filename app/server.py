@@ -400,32 +400,6 @@ def curve(rows, midnight_ms: float | None, step: int = 1):
     return out
 
 
-def food_summary(log: dict | None) -> dict:
-    """Refeições do diário alimentar. O formato só foi visto vazio; lê os nomes mais prováveis dos campos."""
-    foods = (log or {}).get("loggedFoodsWithServingSizes") or []
-    items = []
-    for f in foods:
-        n = f.get("nutritionContents") or f
-        items.append(
-            {
-                "name": f.get("foodName") or f.get("name"),
-                "kcal": n.get("calories"),
-                "protein": n.get("protein"),
-                "carbs": n.get("carbs") or n.get("carbohydrate"),
-                "fat": n.get("fat"),
-            }
-        )
-    total = lambda k: round(sum(i[k] or 0 for i in items), 1) if items else None
-    return {
-        "meals": len((log or {}).get("mealDetails") or []),
-        "items": items,
-        "kcal": total("kcal"),
-        "protein": total("protein"),
-        "carbs": total("carbs"),
-        "fat": total("fat"),
-    }
-
-
 def build_day(day: date) -> dict:
     with ThreadPoolExecutor(max_workers=6) as pool:
         f = {
@@ -433,7 +407,6 @@ def build_day(day: date) -> dict:
             "bb": pool.submit(safe, garmin.call, "get_daily_body_battery", day, day),
             "hrv": pool.submit(safe, garmin.call, "get_daily_hrv", day),
             "spo2": pool.submit(safe, garmin.call, "get_daily_spo2", day),
-            "food": pool.submit(safe, garmin.call, "get_daily_food_logs", day),
             "water": pool.submit(safe, garmin.call, "get_daily_hydration", day, day),
         }
         r = {k: v.result() for k, v in f.items()}
@@ -500,7 +473,6 @@ def build_day(day: date) -> dict:
             "sleepAvg": sp.get("avgSleepSpO2"),
             "hourly": spo2_hourly,
         },
-        "food": food_summary(r["food"]),
         "water": water,
     }
 

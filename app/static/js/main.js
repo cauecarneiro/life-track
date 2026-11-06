@@ -16,7 +16,7 @@ let lastPath = null;
 
 // ---------------------------------------------------------------- barra lateral: Resumo, categorias, Treinos
 
-const CAT_ORDER = ["recuperacao", "sono", "atividade", "coracao", "corpo", "nutricao"];
+const CAT_ORDER = ["recuperacao", "sono", "atividade", "coracao", "corpo"];
 // A qual item da barra cada indicador pertence (para marcar onde você está).
 const METRIC_HOME = { battery: "recuperacao", stress: "recuperacao", balance: "recuperacao", resp: "recuperacao", sleep: "sono", steps: "atividade", calories: "atividade", intensity: "atividade", floors: "atividade", hr: "coracao", rhr: "coracao", hrv: "coracao" };
 const link = (id, href, label, ic) => `<a href="${href}" data-nav="${id}">${icon(ic)}<span>${label}</span></a>`;
@@ -53,8 +53,8 @@ async function route() {
   const alive = () => mine === token;
   let r = parseRoute();
   // Endereços antigos continuam funcionando.
-  const old = { vitais: "coracao", corpo: "corpo", nutricao: "nutricao" }[r.segs[0]];
-  if (old) { go(`#/c/${LEGACY[r.segs[0]] || old}${location.hash.includes("?") ? `?${location.hash.split("?")[1]}` : ""}`, { replace: true }); return; }
+  const old = { vitais: "coracao", nutricao: "corpo" }[r.segs[0]];
+  if (old) { go(`#/c/${old}${location.hash.includes("?") ? `?${location.hash.split("?")[1]}` : ""}`, { replace: true }); return; }
   destroyCharts();
   markNav(r.segs);
   rememberOrigin(r);
@@ -179,7 +179,7 @@ const INDEX = [
   ...Object.entries(CATEGORIES).map(([id, c]) => [c.title, `#/c/${id}`, "Categoria", c.about]),
   ["Treinos", "#/treinos", "Registros", "corrida caminhada trilha atividades"],
   ["Peso", "#/c/corpo", "Corpo", "imc gordura"], ["Idade física", "#/c/corpo", "Corpo", ""], ["Zonas de FC", "#/c/coracao", "Coração", ""],
-  ["Água", "#/c/nutricao", "Nutrição", "hidratação"], ["Oxigênio (SpO2)", "#/c/coracao", "Coração", "pulse ox"],
+  ["Água", "#/c/corpo", "Corpo", "hidratação beber"], ["Oxigênio (SpO2)", "#/c/coracao", "Coração", "pulse ox"],
   ["Minutos de intensidade", "#/m/intensity", "Indicador", "esforço pontos"],
 ];
 let active = 0;

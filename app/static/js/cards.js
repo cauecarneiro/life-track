@@ -269,32 +269,6 @@ export function weekCard(ctx) {
 
 // ---------------------------------------------------------------- calorias, corpo e nutrição
 
-export function caloriesCard(ctx, { span = "" } = {}) {
-  const m = METRICS.calories;
-  const last = ctx.win[ctx.win.length - 1];
-  const { v, partial } = valueOf(m, last);
-  const live = { ...last, ...(last.live || {}) };
-  const share = has(v) && v ? Math.min(100, ((live.kcalActive || 0) / v) * 100) : 0;
-  return `<a class="card${span ? ` ${span}` : ""}" href="#/m/calories" aria-label="Calorias" data-fill="food">
-    ${head("Calorias", { ic: "flame" })}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
-      <div><span class="muted">Consumidas</span><div class="val" style="margin-top:6px"><b class="num" data-eaten style="font-size:34px">—</b><small>kcal</small></div></div>
-      <div><span class="muted">Gastas${partial ? " até agora" : ""}</span><div class="val" style="margin-top:6px"><b class="num" style="font-size:34px">${has(v) ? num(v) : "—"}</b><small>kcal</small></div></div>
-    </div>
-    <span class="prog" aria-hidden="true"><i style="width:${share}%"></i></span>
-    <div class="rows"><div class="r"><span>Em repouso</span><b class="num">${has(live.kcalRest) ? `${num(live.kcalRest)} kcal` : "—"}</b></div><div class="r"><span>Ativas</span><b class="num">${has(live.kcalActive) ? `${num(live.kcalActive)} kcal` : "—"}</b></div></div>
-    <p class="note" data-foodnote>Consumo vem do diário alimentar do Garmin Connect.</p>
-  </a>`;
-}
-
-export function fillFood(el, day) {
-  const f = day?.food;
-  const eaten = el.querySelector("[data-eaten]");
-  const note = el.querySelector("[data-foodnote]");
-  if (f?.kcal != null && eaten) eaten.textContent = num(f.kcal);
-  if (note) note.textContent = f?.items?.length ? `${f.items.length} alimentos em ${f.meals || 1} refeições no diário.` : "Nenhum alimento registrado neste dia no diário do Garmin Connect.";
-}
-
 export function weightCard(ctx, { span = "" } = {}) {
   return `<a class="card${span ? ` ${span}` : ""}" href="#/c/corpo" aria-label="Peso" data-fill="weight">${head("Peso", { ic: "scale" })}<div class="skel"></div></a>`;
 }
@@ -311,7 +285,7 @@ export function fillWeight(el, profile, ctx) {
   el.innerHTML = `${head("Peso", { ic: "scale", chip: delta != null ? `<span class="chip">${icon(delta > 0 ? "arrowUp" : "arrowDown")}${num(Math.abs(delta), 1)} kg</span>` : "" })}
     <div class="val"><b class="num">${num(last.kg, 1)}</b><small>kg</small></div>
     <p class="sub">Último registro em ${esc(fmtDay(last.date, { day: "numeric", month: "short", year: "numeric" }))}</p>
-    <div class="rows"><div class="r"><span>IMC</span><b class="num">${last.bmi != null ? num(last.bmi, 1) : profile?.fitnessAge?.bmi != null ? num(profile.fitnessAge.bmi, 1) : "—"}</b></div>
+    <div class="rows"><div class="r"><span>${last.bmi == null && profile?.fitnessAge?.bmiDate && profile.fitnessAge.bmiDate < last.date ? `IMC (calculado em ${esc(fmtDay(profile.fitnessAge.bmiDate, { day: "numeric", month: "short" }))})` : "IMC"}</span><b class="num">${last.bmi != null ? num(last.bmi, 1) : profile?.fitnessAge?.bmi != null ? num(profile.fitnessAge.bmi, 1) : "—"}</b></div>
     <div class="r"><span>Registros no último ano</span><b class="num">${ws.length}</b></div></div>`;
 }
 
@@ -362,7 +336,7 @@ export function fillWater(el, profile, ctx) {
   const ml = e?.valueInML ?? e?.intakeInML ?? null;
   if (ml == null) {
     el.innerHTML = `${head("Hidratação", { ic: "droplet", go: false })}<div class="val"><b>—</b></div><p class="sub">${list.length ? "Nada registrado neste dia" : "Nenhum registro nos últimos 30 dias"}</p>
-      <p class="empty-note">Registre a água no Garmin Connect ou no relógio e ela aparece aqui.</p>`;
+      <p class="empty-note">No relógio, aperte ↑ ou ↓ no mostrador até a tela de hidratação e START para registrar. O total do dia aparece aqui depois de sincronizar.</p>`;
     return;
   }
   const goal = e.goalInML;
@@ -421,23 +395,6 @@ export function fillHrvNight(el, day) {
     <div class="val"><b class="num">${num(h.lastNight)}</b><small>ms</small></div>
     <p class="sub">Média da noite · pico de 5 min ${num(h.peak5)} · faixa ${num(h.low)} a ${num(h.high)} ms</p>
     <div class="viz">${curveHtml(norm, { xMax: Math.max(1, end - start), tall: true })}<div class="axis"><span>${hhmm(start)}</span><span>${hhmm(end)}</span></div></div>`;
-}
-
-export function foodCard(ctx, span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" data-fill="foodlog">${head("Diário alimentar", { ic: "fork", go: false })}<div class="skel"></div></article>`;
-}
-
-export function fillFoodLog(el, day) {
-  const f = day?.food;
-  if (!f?.items?.length) {
-    el.innerHTML = `${head("Diário alimentar", { ic: "fork", go: false })}<div class="val"><b>—</b></div><p class="sub">Nada registrado neste dia</p>
-      <p class="empty-note">As refeições vêm do diário alimentar do Garmin Connect. Quando você registrar, calorias, proteínas, carboidratos e gorduras aparecem aqui.</p>`;
-    return;
-  }
-  const macro = (label, v) => `<div class="r"><span>${label}</span><b class="num">${v != null ? `${num(v)} g` : "—"}</b></div>`;
-  el.innerHTML = `${head("Diário alimentar", { ic: "fork", go: false })}<div class="val"><b class="num">${num(f.kcal)}</b><small>kcal</small></div><p class="sub">${f.items.length} alimentos</p>
-    <div class="rows">${macro("Proteínas", f.protein)}${macro("Carboidratos", f.carbs)}${macro("Gorduras", f.fat)}</div>
-    <div class="rows">${f.items.slice(0, 6).map((i) => `<div class="r"><span>${esc(i.name || "Alimento")}</span><b class="num">${i.kcal != null ? `${num(i.kcal)} kcal` : "—"}</b></div>`).join("")}</div>`;
 }
 
 export const qualityText = (q) => QUALITY[q] || q;

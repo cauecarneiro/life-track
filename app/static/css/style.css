@@ -127,6 +127,7 @@ main { margin-left: var(--side); min-height: 100vh; padding: 34px max(clamp(20px
 
 .bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); }
 .bento > * { grid-column: span 3; min-width: 0; }
+.bento > .c4 { grid-column: span 4; }
 .bento > .span2 { grid-column: span 6; }
 .bento > .span3 { grid-column: span 9; }
 .bento > .span4, .bento > .section { grid-column: 1 / -1; margin-top: 0; }
@@ -490,7 +491,7 @@ a.cell:hover, a.cell:focus-visible { outline-color: var(--muted); transform: sca
 
 @media (max-width: 1180px) {
   .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .bento > *, .bento > .span3 { grid-column: span 3; }
+  .bento > *, .bento > .c4, .bento > .span3 { grid-column: span 3; }
   .bento > .span2 { grid-column: span 6; }
 }
 @media (max-width: 960px) {
@@ -510,7 +511,7 @@ a.cell:hover, a.cell:focus-visible { outline-color: var(--muted); transform: sca
 }
 @media (max-width: 640px) {
   .bento { grid-template-columns: minmax(0, 1fr); }
-  .bento > *, .bento > .span2, .bento > .span3 { grid-column: auto; }
+  .bento > *, .bento > .c4, .bento > .span2, .bento > .span3 { grid-column: auto; }
   .card { min-height: 0; }
   .card > .viz { padding-top: 18px; }
   .page-head h1 { font-size: 30px; }

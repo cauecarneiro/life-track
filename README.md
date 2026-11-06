@@ -13,7 +13,7 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral em três grupos, como no app Saúde: Resumo; Categorias (Recuperação, Sono, Atividade, Coração, Corpo, Nutrição); Registros (Treinos). No celular ela vira uma barra de abas. A busca encontra qualquer dado (⌘K de qualquer lugar). Há microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
+Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral em três grupos, como no app Saúde: Resumo; Categorias (Recuperação, Sono, Atividade, Coração, Corpo); Registros (Treinos). No celular ela vira uma barra de abas. A busca encontra qualquer dado (⌘K de qualquer lugar). Há microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
 
 **Resumo (página inicial)**
 - Um resumo do dia em texto, escrito a partir dos seus números, e o seletor de dia (clique na data para abrir um calendário).
@@ -33,7 +33,7 @@ Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fon
 
 Abaixo, a lista dia a dia (no sono: deitou, acordou, duração, nota e fases) e o dia escolhido em detalhe, com a curva do dia quando existe. As setas trocam de semana; o controle no topo troca para 30 dias, 90 dias ou 6 meses, com gráfico, estatísticas e a tabela completa. O mapa de calor do ano aparece nas duas visões.
 
-**Categorias**: cada uma lista os seus indicadores com o valor do dia e os últimos 7 dias, e traz os cartões de detalhe: a curva da Body Battery (Recuperação), a FC do dia e o HRV da noite (Coração), peso e idade física (Corpo), calorias, água e diário alimentar (Nutrição), treinos recentes (Atividade).
+**Categorias**: cada uma lista os seus indicadores com o valor do dia e os últimos 7 dias, e traz os cartões de detalhe: a curva da Body Battery (Recuperação), a FC do dia e o HRV da noite (Coração), peso, idade física e água (Corpo), treinos recentes (Atividade).
 
 **Teclado**: ← e → trocam de dia na página de um indicador, Shift+← e Shift+→ trocam de semana, ⌘K abre a busca e "Pular para o conteúdo" é o primeiro item do Tab. O estudo de usabilidade e acessibilidade está em [docs/estudo-ux.md](docs/estudo-ux.md).
 
@@ -43,7 +43,7 @@ O dia de hoje ainda está em andamento: passos, calorias, estresse, andares e es
 
 ### O que depende do seu relógio e da sua conta
 
-O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se você os registrar: **oxigênio (SpO2)** exige o Pulse Ox ligado no relógio; **peso, gordura corporal, hidratação e alimentação** vêm do Garmin Connect (balança, registro manual ou integração) e o Life Track só lê. Quando não há registro, o cartão diz isso. O formato do diário alimentar e da hidratação foi implementado sem dados reais para conferir.
+O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se você os registrar: **oxigênio (SpO2)** exige o Pulse Ox ligado no relógio (pode ser só durante o sono); **peso** é registrado no Garmin Connect (Mais › Estatísticas de saúde › Peso) e **água** no relógio, pelo widget de hidratação. O Life Track só lê. Quando não há registro, o cartão diz isso. O diário alimentar da Garmin é pago (Connect+), por isso o painel não o usa. O formato da hidratação foi implementado sem dados reais para conferir.
 
 ## Como funciona
 
@@ -159,7 +159,7 @@ Detalhes e fontes em [docs/pesquisa-de-apis.md](docs/pesquisa-de-apis.md).
 
 - [x] Garmin: sono, HRV, repouso, Body Battery, estresse, passos
 - [x] Garmin: treinos com mapa, ritmo, FC, zonas, altimetria, cadência, potência e voltas
-- [x] Garmin: FC ao longo do dia, Body Battery e HRV da noite, respiração, calorias, andares, zonas, idade física, peso, SpO2, hidratação e diário alimentar (quando registrados)
+- [x] Garmin: FC ao longo do dia, Body Battery e HRV da noite, respiração, calorias, andares, zonas, idade física, peso, SpO2, hidratação (quando registrada)
 - [ ] Tema claro
 - [ ] Oura Ring
 - [ ] WHOOP
