@@ -312,7 +312,6 @@ export function fillWeight(el, profile, ctx) {
     <div class="val"><b class="num">${num(last.kg, 1)}</b><small>kg</small></div>
     <p class="sub">Último registro em ${esc(fmtDay(last.date, { day: "numeric", month: "short", year: "numeric" }))}</p>
     <div class="rows"><div class="r"><span>IMC</span><b class="num">${last.bmi != null ? num(last.bmi, 1) : profile?.fitnessAge?.bmi != null ? num(profile.fitnessAge.bmi, 1) : "—"}</b></div>
-    <div class="r"><span>Gordura corporal</span><b class="num">${last.fat != null ? `${num(last.fat, 1)}%` : "sem medição"}</b></div>
     <div class="r"><span>Registros no último ano</span><b class="num">${ws.length}</b></div></div>`;
 }
 
@@ -380,7 +379,7 @@ export function fillSpo2(el, day) {
   const v = s?.avg ?? s?.sleepAvg;
   if (v == null) {
     el.innerHTML = `${head("Oxigênio (SpO2)", { ic: "droplet", go: false })}<div class="val"><b>—</b></div><p class="sub">Sem medição neste dia</p>
-      <p class="empty-note">O relógio não mediu oxigênio. Ative o Pulse Ox nas configurações do relógio para registrar.</p>`;
+      <p class="empty-note">Sem medição. Com o Pulse Ox ligado para o sono, a média da noite aparece aqui depois de dormir com o relógio.</p>`;
     return;
   }
   el.innerHTML = `${head("Oxigênio (SpO2)", { ic: "droplet", go: false })}<div class="val"><b class="num">${num(v)}</b><small>%</small></div>
