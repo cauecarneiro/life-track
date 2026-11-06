@@ -1,11 +1,11 @@
 // Páginas de resumo (início, sinais vitais, corpo, nutrição): cartões do dia escolhido.
 // O dia vem de ?d=AAAA-MM-DD. Dados que exigem outra chamada (curva do dia, perfil) entram depois, sem travar a tela.
-import { loadOverview, loadActivities, loadDay, loadProfile, hasOverview, hasActivities } from "../api.js?v=3";
-import * as C from "../cards.js?v=3";
-import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=3";
-import { trainingCells, totals, between } from "../acts.js?v=3";
-import { loadingHtml, fillDays } from "../ui.js?v=3";
-import { esc, num, fmtDay, today, addDays, diffDays, duration, typeName, icon, cap } from "../util.js?v=3";
+import { loadOverview, loadActivities, loadDay, loadProfile, hasOverview, hasActivities } from "../api.js?v=4";
+import * as C from "../cards.js?v=4";
+import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=4";
+import { trainingCells, totals, between } from "../acts.js?v=4";
+import { loadingHtml, fillDays, settle } from "../ui.js?v=4";
+import { esc, num, fmtDay, today, addDays, diffDays, duration, typeName, icon, cap } from "../util.js?v=4";
 
 const PAGES = {
   home: { base: "#/", title: null },
@@ -20,44 +20,40 @@ const PROFILE_FILL = ["weight", "fitness", "zones", "water"];
 // O dia só vale como padrão quando a noite já sincronizou; senão a home abriria vazia.
 const hasAny = (r) => r && (r.sleepH != null || r.hrv != null);
 
-// Body Battery, sono, passos e estresse vêm primeiro em toda grade em que aparecem.
+// Body Battery, sono, passos e estresse vêm primeiro em toda grade em que aparecem; calorias logo depois.
 function layout(page, ctx, acts) {
   const m = (id, o) => C.metricCard(id, ctx, o);
   switch (page) {
     case "vitais":
       return [m("stress"), m("hrv"), m("rhr"), C.spo2Card(),
         C.hrCard(ctx, { span: "span2" }), C.hrvNightCard(ctx, "span2"),
-        m("resp"), m("intensity"), C.zonesCard(), C.fitnessCard()];
+        m("resp"), m("balance"), C.zonesCard(), C.fitnessCard()];
     case "corpo":
       return [m("battery"), m("sleep"), m("steps"), C.weightCard(ctx),
         C.bbCurveCard(ctx, "span3"), m("floors"),
-        C.fitnessCard(), C.zonesCard(), C.caloriesCard(ctx), C.waterCard()];
+        C.fitnessCard(), C.zonesCard(), m("calories"), C.waterCard()];
     case "nutricao":
-      return [m("steps"), C.caloriesCard(ctx, { span: "c5" }), C.foodCard(ctx, "c4"),
-        C.waterCard("c4"), C.weightCard(ctx, { span: "c4" }), m("intensity", { span: "c4" })];
+      return [m("steps"), m("calories"), C.caloriesCard(ctx, { span: "span2" }),
+        C.foodCard(ctx, "span2"), C.waterCard(), C.weightCard(ctx)];
     default:
-      return [C.gaugeCard(ctx, { span: "rows2" }), m("sleep"), m("steps"), m("stress"),
-        C.balanceCard(ctx, { span: "c5" }), C.hrCard(ctx, { span: "c4" }),
-        m("hrv"), m("rhr"), m("battery"), m("intensity"),
-        m("resp"), m("calories"), C.weightCard(ctx), C.fitnessCard(),
-        C.calendarCard(ctx, acts, { span: "c4" }), C.zonesCard("c4"), C.waterCard("c4")];
+      return [m("battery"), m("sleep"), m("steps"), m("stress"),
+        m("calories"), m("balance"), C.hrCard(ctx), m("hrv"),
+        m("rhr"), m("intensity"), m("resp"), C.weightCard(ctx),
+        C.fitnessCard(), C.zonesCard(), C.waterCard(), C.calendarCard(ctx, acts)];
   }
 }
 
-const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; };
-
 function datePill(ctx) {
   const prev = addDays(ctx.sel, -1), next = addDays(ctx.sel, 1);
-  return `<div class="hero-r"><div class="datepill">
+  return `<div class="head-r">${ctx.isToday ? "" : `<a class="btn" href="${ctx.url(ctx.today)}" data-replace>Hoje</a>`}<div class="stepper">
       <button class="step" type="button" data-go="${ctx.url(prev)}" data-replace aria-label="Dia anterior">${icon("chevLeft")}</button>
       <span class="when">${esc(ctx.isToday ? "Hoje" : fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" }))}</span>
       <button class="step" type="button" ${next <= ctx.today ? `data-go="${ctx.url(next)}" data-replace` : "disabled"} aria-label="Próximo dia">${icon("chevRight")}</button>
-    </div>${ctx.isToday ? "" : `<a class="pilllink" href="${ctx.url(ctx.today)}" data-replace>Voltar para hoje</a>`}</div>`;
+    </div></div>`;
 }
 
-function hero(ctx, chosen) {
-  const title = ctx.isToday || !chosen ? greeting() : cap(fmtDay(ctx.sel, { weekday: "long", day: "numeric", month: "long" }));
-  return `<section class="hero"><div><h1>${esc(title)}</h1><p class="insight">${C.insightText(ctx)}</p></div>${datePill(ctx)}</section>`;
+function hero(ctx) {
+  return `<header class="page-head"><div><h1>Resumo</h1><p class="muted">${esc(cap(fmtDay(ctx.sel, { weekday: "long", day: "numeric", month: "long" })))}</p><p class="insight">${C.insightText(ctx)}</p></div>${datePill(ctx)}</header>`;
 }
 
 function dayBar(page, ctx) {
@@ -108,9 +104,11 @@ export async function renderHub(root, route, alive, page = "home") {
     tail = C.weekCard(ctx);
   }
 
-  root.innerHTML = `${page === "home" ? hero(ctx, !!wanted) : dayBar(page, ctx)}<div class="bento">${cards.join("")}${tail}</div>`;
-  root.querySelectorAll(".bento > article, .bento > section").forEach((el, i) => { el.classList.add("rise"); el.style.setProperty("--i", i); });
+  root.innerHTML = `${page === "home" ? hero(ctx) : dayBar(page, ctx)}<div class="bento">${cards.join("")}${tail}</div>`;
+  root.classList.remove("static");
+  root.querySelectorAll(".bento > article, .bento > section").forEach((el, i) => { el.classList.add("rise"); el.style.setProperty("--i", Math.min(i, 12)); });
   scrollHeatToEnd(root);
+  settle(root);
 
   // Preenchimento tardio: cada cartão troca o esqueleto pelo dado quando ele chega.
   const el = (name) => [...root.querySelectorAll(`[data-fill="${name}"]`)];

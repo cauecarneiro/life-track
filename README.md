@@ -13,24 +13,27 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-O design é escuro e quente: fundo preto com brilho laranja ao fundo, cartões de vidro fosco, menu lateral flutuante e uma abertura com saudação e um resumo do dia escrito a partir dos seus números. O laranja é o único destaque; a fonte é a Geist, com a Instrument Serif nos títulos grandes. Body Battery, sono, passos e estresse aparecem sempre primeiro em qualquer grade ou lista. A busca no topo leva direto a qualquer dado.
+Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral com as seções (vira barra de abas no celular), busca por qualquer dado e microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
 
-**Início**
-- Cartões do dia escolhido, nesta ordem: energia (medidor da Body Battery), sono (com as fases), passos (com anel da meta) e estresse (blocos por faixa), depois equilíbrio (quantos indicadores estão no seu normal), frequência cardíaca (onda do dia inteiro), HRV, FC de repouso, Body Battery (faixa de cada dia), esforço, respiração, calorias, peso, idade física, calendário, zonas de FC e hidratação. Cada cartão traz o valor, a variação contra a média dos 14 dias anteriores e as barras ou a linha desses dias.
-- O seletor de dia no topo e o calendário trocam o dia de **todos** os cartões. Setas e atalhos andam dia a dia.
-- "Sua semana": sete dias lado a lado, com todos os indicadores principais.
-- O mapa de calor de treinos dos últimos 12 meses (um quadrado por dia, quanto mais claro, mais minutos) e os últimos treinos.
+**Resumo (página inicial)**
+- Um resumo do dia em texto, escrito a partir dos seus números, e o seletor de dia.
+- Cartões do mesmo tamanho, nesta ordem: Body Battery, sono, passos, estresse, calorias, equilíbrio, frequência cardíaca (batimentos do dia inteiro), HRV, FC de repouso, esforço, respiração, peso, idade física, zonas de FC, hidratação e calendário.
+- "Sua semana" com os indicadores principais lado a lado, o mapa de calor de treinos e as atividades recentes.
 
-**Sinais vitais, Corpo e Nutrição**: as mesmas ideias, agrupadas por assunto. Sinais vitais traz a FC do dia, o HRV da noite, a respiração, o oxigênio e o estresse. Corpo traz a curva da Body Battery com os eventos que a carregaram ou gastaram, peso, idade física e zonas. Nutrição traz calorias gastas e consumidas, água e o diário alimentar.
+**Cada indicador**: abre na **semana**, com a média, o resumo e um gráfico próprio para cada dado:
+- Sono: uma barra por noite, da hora em que dormiu até a hora em que acordou, com a duração e a nota.
+- Passos e andares: barras com a meta e a média.
+- Estresse: a composição de cada dia (repouso, baixo, médio, alto).
+- Calorias: ativas e em repouso empilhadas.
+- Body Battery e frequência cardíaca: a faixa do mínimo ao máximo, com o repouso marcado.
+- HRV: a linha das noites sobre a sua faixa equilibrada.
+- Equilíbrio: quantos dos seis indicadores principais ficaram no seu normal em cada dia.
 
-**Cada indicador** (clique em um cartão)
-- Um dia em destaque com todos os dados daquele dia: no sono, horários, nota, as sete avaliações da Garmin (duração, estresse, REM, profundo...), despertares, respiração e necessidade; no HRV, a média da semana, o pico de 5 min e a faixa equilibrada; nas calorias, repouso e ativas; e assim por diante.
-- A **curva do dia** (FC com o tempo em cada zona, Body Battery, HRV da noite).
-- Troque de dia com as setas da tela, as **setas do teclado**, o gráfico, o mapa de calor do ano ou a tabela. Períodos de 30 dias a 1 ano, média, mínimo, máximo e tabela de todos os dias.
+Abaixo, a lista dia a dia (no sono: deitou, acordou, duração, nota e fases) e o dia escolhido em detalhe, com a curva do dia quando existe. As setas trocam de semana; o controle no topo troca para 30 dias, 90 dias ou 6 meses, com gráfico, estatísticas e a tabela completa. O mapa de calor do ano aparece nas duas visões.
 
-**Treinos**
-- Totais do período, filtro por modalidade, mapa de calor, horas por semana e lista completa.
-- Página de cada treino: mapa, ritmo, FC, altimetria, cadência e potência (um gráfico para cada), zonas, dinâmica de corrida, voltas e "Mais números" (velocidade máxima, temperatura, altitude, passos, minutos de intensidade, efeito anaeróbico, Body Battery gasta, perda de líquido).
+**Sinais vitais, Corpo e Nutrição** agrupam os mesmos cartões por assunto, com a FC do dia, o HRV da noite, a curva da Body Battery com seus eventos, peso, idade física, zonas, calorias, água e diário alimentar.
+
+**Treinos**: totais, filtro por modalidade, mapa de calor, horas por semana e lista completa. Cada treino tem mapa, ritmo, FC, altimetria, cadência e potência (um gráfico para cada), zonas, dinâmica de corrida, voltas e outros números.
 
 O dia de hoje ainda está em andamento: passos, calorias, estresse, andares e esforço aparecem como "até agora" e ficam fora das médias.
 
@@ -183,7 +186,8 @@ app/
       metrics.js     o que cada indicador mede e mostra (um lugar para adicionar indicadores)
       heatmap.js     o mapa de calor
       charts.js      gráficos (Chart.js) e mini-gráficos em SVG
-      cards.js       os cartões do início e das páginas de resumo
+      cards.js       os cartões do resumo e das páginas por assunto
+      week.js        a visão semanal de cada indicador
       views/         hub (início, vitais, corpo, nutrição), indicador, treinos e treino
 docs/
   pesquisa-de-apis.md   o que cada fabricante oferece, com fontes

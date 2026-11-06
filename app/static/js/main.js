@@ -1,28 +1,28 @@
 // Ponto de entrada: rotas, atalhos de teclado, dicas flutuantes e o botão de atualizar.
-import { setupCharts, destroyCharts } from "./charts.js?v=3";
-import { go, parseRoute } from "./nav.js?v=3";
-import { refreshAll } from "./api.js?v=3";
-import { emptyHtml, errorHtml } from "./ui.js?v=3";
-import { icon } from "./util.js?v=3";
-import { METRICS, ORDER } from "./metrics.js?v=3";
-import { renderHub } from "./views/hub.js?v=3";
-import { renderMetric, stepDay } from "./views/metric.js?v=3";
-import { renderWorkouts } from "./views/workouts.js?v=3";
-import { renderWorkout } from "./views/workout.js?v=3";
+import { setupCharts, destroyCharts } from "./charts.js?v=4";
+import { go, parseRoute } from "./nav.js?v=4";
+import { refreshAll } from "./api.js?v=4";
+import { emptyHtml, errorHtml } from "./ui.js?v=4";
+import { icon } from "./util.js?v=4";
+import { METRICS, ORDER } from "./metrics.js?v=4";
+import { renderHub } from "./views/hub.js?v=4";
+import { renderMetric, stepDay, leaveMetric } from "./views/metric.js?v=4";
+import { renderWorkouts } from "./views/workouts.js?v=4";
+import { renderWorkout } from "./views/workout.js?v=4";
 
 const view = document.getElementById("view");
 let token = 0;
 let lastPath = null;
 
 const NAV = [
-  ["home", "#/", "Início", "home"],
+  ["home", "#/", "Resumo", "home"],
   ["vitais", "#/vitais", "Sinais vitais", "pulse"],
   ["corpo", "#/corpo", "Corpo", "body"],
   ["nutricao", "#/nutricao", "Nutrição", "fork"],
   ["sleep", "#/m/sleep", "Sono", "moon"],
   ["workouts", "#/treinos", "Treinos", "dumbbell"],
 ];
-document.getElementById("nav").innerHTML = NAV.map(([id, href, label, ic]) => `<a href="${href}" data-nav="${id}" data-tip="${label}" aria-label="${label}">${icon(ic)}</a>`).join("");
+document.getElementById("nav").innerHTML = NAV.map(([id, href, label, ic]) => `<a href="${href}" data-nav="${id}">${icon(ic)}<span>${label}</span></a>`).join("");
 
 function markNav(segs) {
   const [a, b] = segs;
@@ -38,6 +38,8 @@ async function route() {
   destroyCharts();
   markNav(r.segs);
   if (r.path !== lastPath) { window.scrollTo(0, 0); lastPath = r.path; }
+
+  if (r.segs[0] !== "m") { view.classList.remove("static"); leaveMetric(); }
 
   try {
     const [section, arg] = r.segs;
@@ -111,6 +113,7 @@ const found = document.getElementById("found");
 const norm = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const INDEX = [
   ...ORDER.map((id) => [METRICS[id].label, `#/m/${id}`, "Indicador", METRICS[id].about]),
+  ["Resumo", "#/", "Página", "início hoje"],
   ["Sinais vitais", "#/vitais", "Página", "coração respiração oxigênio spo2 estresse"],
   ["Corpo", "#/corpo", "Página", "peso idade física zonas energia bateria"],
   ["Nutrição", "#/nutricao", "Página", "calorias comida alimentação água hidratação"],

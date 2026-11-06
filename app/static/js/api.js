@@ -1,3 +1,5 @@
+import { addBalance } from "./metrics.js?v=4";
+
 // Acesso ao servidor local, com cache em memória no navegador.
 
 const overview = new Map();
@@ -34,7 +36,11 @@ function dropPartialToday(ov) {
 }
 
 export async function loadOverview(days) {
-  if (!overview.has(days)) overview.set(days, dropPartialToday(await get(`/api/overview?days=${days}`)));
+  if (!overview.has(days)) {
+    const ov = dropPartialToday(await get(`/api/overview?days=${days}`));
+    addBalance(ov.days);
+    overview.set(days, ov);
+  }
   return overview.get(days);
 }
 

@@ -1,5 +1,5 @@
 // Gráficos (Chart.js) e mini-gráficos (SVG) em tons de cinza.
-import { fmtDay } from "./util.js?v=3";
+import { fmtDay } from "./util.js?v=4";
 
 export const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -41,7 +41,7 @@ const selectedBand = {
     const step = n > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : chartArea.width;
     const cx = x.getPixelForValue(opts.index);
     ctx.save();
-    ctx.fillStyle = "rgba(255,106,31,0.12)";
+    ctx.fillStyle = "rgba(255,159,10,0.16)";
     ctx.fillRect(cx - step / 2, chartArea.top, step, chartArea.bottom - chartArea.top);
     ctx.restore();
   },
@@ -57,7 +57,7 @@ const crosshair = {
     const { ctx, chartArea } = chart;
     const x = tip.dataPoints[0].element.x;
     ctx.save();
-    ctx.strokeStyle = "rgba(255,180,58,0.55)";
+    ctx.strokeStyle = "rgba(235,235,245,0.4)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, chartArea.top);
@@ -69,7 +69,7 @@ const crosshair = {
 
 export function setupCharts() {
   Chart.register(selectedBand, crosshair);
-  Chart.defaults.font.family = '"Geist", system-ui, sans-serif';
+  Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif';
   Chart.defaults.font.size = 12;
   Chart.defaults.color = css("--muted");
 }
@@ -84,8 +84,8 @@ export function baseOptions(extra = {}) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#1d130e", titleColor: css("--ink"), bodyColor: css("--muted"),
-        borderColor: "rgba(255,255,255,0.16)", borderWidth: 1, padding: 10, cornerRadius: 8, boxPadding: 4,
+        backgroundColor: "#2c2c2e", titleColor: css("--ink"), bodyColor: css("--muted"),
+        borderColor: "rgba(84,84,88,0.6)", borderWidth: 1, padding: 10, cornerRadius: 8, boxPadding: 4,
         titleFont: { weight: "500" },
       },
     },

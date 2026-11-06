@@ -1,14 +1,19 @@
 // Indicador: um dia em destaque, outros dias no gráfico, no mapa de calor e na tabela.
-import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js?v=3";
-import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js?v=3";
-import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js?v=3";
-import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js?v=3";
-import { loadingHtml, emptyHtml, fillDays, barsHtml } from "../ui.js?v=3";
-import { go } from "../nav.js?v=3";
-import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js?v=3";
+import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js?v=4";
+import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js?v=4";
+import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js?v=4";
+import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js?v=4";
+import { loadingHtml, emptyHtml, fillDays, barsHtml, segmented, settle } from "../ui.js?v=4";
+import { weekHtml } from "../week.js?v=4";
+import { go } from "../nav.js?v=4";
+import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js?v=4";
 
-const RANGES = [[30, "30 dias"], [90, "90 dias"], [180, "6 meses"], [365, "1 ano"]];
-const url = (id, d, r, x) => `#/m/${id}?d=${d}&r=${r}${x ? "&x=1" : ""}`;
+const RANGES = [[7, "Semana"], [30, "30 dias"], [90, "90 dias"], [180, "6 meses"]];
+let lastKey = "";
+
+/** Ao sair da página, a próxima visita volta a animar. */
+export function leaveMetric() { lastKey = ""; }
+const url = (id, d, r, x, e) => `#/m/${id}?d=${d}&r=${r}${x ? "&x=1" : ""}${e ? `&e=${e}` : ""}`;
 let live = null;
 
 /** Seta esquerda e direita trocam de dia. */
@@ -24,7 +29,7 @@ const withUnit = (m, v) => `${m.fmt(v)}${m.unit ? ` ${m.unit}` : ""}`;
 function chartConfig(m, rows, selIdx, pick) {
   const dates = rows.map((r) => r.date);
   const labels = dates.map((d) => fmtDay(d));
-  const text = css("--accent"), muted = css("--muted");
+  const text = css("--ink"), muted = css("--muted");
   const n = rows.length;
   const hasData = new Set(rows.filter((r) => r[m.key] != null).map((r) => r.date));
 
@@ -74,7 +79,7 @@ function chartConfig(m, rows, selIdx, pick) {
         type: "line",
         data: { labels, datasets: [
           { type: "line", label: "Faixa mínima", data: rows.map((r) => r.hrvLow ?? null), borderColor: "transparent", pointRadius: 0, spanGaps: true, order: 3 },
-          { type: "line", label: "Faixa equilibrada", data: rows.map((r) => r.hrvHigh ?? null), borderColor: "transparent", backgroundColor: "rgba(255,106,31,0.13)", fill: "-1", pointRadius: 0, spanGaps: true, order: 3 },
+          { type: "line", label: "Faixa equilibrada", data: rows.map((r) => r.hrvHigh ?? null), borderColor: "transparent", backgroundColor: "rgba(255,255,255,0.08)", fill: "-1", pointRadius: 0, spanGaps: true, order: 3 },
           line("Noite", rows.map((r) => r.hrv ?? null), { order: 1 }),
           { type: "line", label: "Média de 7 dias", data: rows.map((r) => r.hrvWeekly ?? null), borderColor: muted, borderDash: [4, 4], borderWidth: 1.25, pointRadius: 0, spanGaps: true, order: 2 },
         ] },
@@ -121,7 +126,7 @@ function chartConfig(m, rows, selIdx, pick) {
 
 function scoreConfig(rows, selIdx, pick) {
   const dates = rows.map((r) => r.date);
-  const text = css("--accent");
+  const text = css("--ink");
   const n = rows.length;
   return {
     type: "line",
@@ -160,8 +165,8 @@ async function loadIntraday(kind, sel, alive) {
   let day;
   try { day = await loadDay(sel); } catch (e) { document.getElementById("intra-extra")?.insertAdjacentHTML("beforeend", `<p class="note">Não foi possível carregar o detalhe do dia: ${esc(e.message)}</p>`); return; }
   if (!alive() || !document.getElementById("c-intra")) return;
-  const text = css("--accent-hi");
-  const dataset = (pts) => ({ data: pts.map((p) => ({ x: p[0], y: p[1] })), borderColor: text, backgroundColor: "rgba(255,106,31,0.14)", borderWidth: 1.75, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: true, parsing: false });
+  const text = css("--ink");
+  const dataset = (pts) => ({ data: pts.map((p) => ({ x: p[0], y: p[1] })), borderColor: text, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1.75, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: true, parsing: false });
   const extra = document.getElementById("intra-extra");
   const empty = (t) => { document.getElementById("c-intra").closest(".plot").outerHTML = `<p class="muted">${t}</p>`; };
 
@@ -176,7 +181,7 @@ async function loadIntraday(kind, sel, alive) {
       const mins = [0, 0, 0, 0, 0, 0];
       for (const [, v] of pts) mins[floors.filter((f) => v >= f).length] += 2;
       const names = ["Abaixo da zona 1", "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5"];
-      const colors = ["#3a2d26", "#5a3b2a", "#8a4a26", "#d4571a", "#ff7a1f", "#ffb43a"];
+      const colors = ["#2c2c2e", "#3a3a3c", "#48484a", "#636366", "#8e8e93", "#ffffff"];
       const total = mins.reduce((a, b) => a + b, 0);
       extra.innerHTML = barsHtml({ title: "Tempo em cada zona de frequência", items: mins.map((v, i) => ({ label: names[i], value: v, total, color: colors[i], text: `${minutesText(v)} · ${Math.round((v / total) * 100)}%` })) });
     }).catch(() => {});
@@ -206,125 +211,153 @@ async function loadIntraday(kind, sel, alive) {
   }
 }
 
-export async function renderMetric(root, { id, q }, alive) {
-  const m = METRICS[id];
-  if (!m) { root.innerHTML = emptyHtml("Indicador não encontrado", "Volte para a página inicial e escolha um dos indicadores."); return; }
-  if (!hasOverview(365)) root.innerHTML = loadingHtml(`Buscando ${m.label.toLowerCase()} do último ano`);
-  const ov = await loadOverview(365);
-  if (!alive()) return;
-
-  const r = RANGES.some(([v]) => v === Number(q.r)) ? Number(q.r) : 30;
-  const expanded = q.x === "1";
-  const start = addDays(ov.end, -(r - 1));
-  const rows = fillDays(ov.days, start, ov.end);
-  const byDate = new Map(ov.days.map((d) => [d.date, d]));
-  const withData = rows.filter((x) => x[m.key] != null);
-  if (!withData.length) {
-    root.innerHTML = `<a class="crumb" href="#/">${icon("chevLeft")} Hoje</a>${emptyHtml(`Sem dados de ${m.label.toLowerCase()}`, "Nenhum registro nesse período. Escolha um período maior ou sincronize o relógio com o aplicativo Garmin Connect.")}`;
-    return;
+function dayPanel(m, id, row, sel, r, rows, dates) {
+  if (!row || row[m.key] == null) {
+    return `<section class="day"><div class="day-main"><span class="when">${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}</span><p class="muted" style="margin-top:10px">Sem ${esc(m.label.toLowerCase())} registrado neste dia.</p></div></section>`;
   }
-  const dates = withData.map((x) => x.date);
-  const sel = dates.includes(q.d) ? q.d : dates[dates.length - 1];
-  const row = byDate.get(sel);
-  const selIdx = rows.findIndex((x) => x.date === sel);
-  live = { id, dates, sel, r, x: expanded };
-
-  // Resumo do período
-  const values = withData.map((x) => x[m.key]);
-  const mean = avg(values);
-  const hi = withData.reduce((a, b) => (b[m.key] > a[m.key] ? b : a));
-  const lo = withData.reduce((a, b) => (b[m.key] < a[m.key] ? b : a));
-  const before = fillDays(ov.days, addDays(start, -r), addDays(start, -1)).map((x) => x[m.key]);
-  const prevMean = before.filter((v) => v != null).length >= 5 ? avg(before) : null;
-
-  // Situação do dia
   const range = normalRange(m, rows.filter((x) => x.date !== sel), row);
   const status = statusOf(row[m.key], range);
   const tone = toneOf(m, status);
-  const dayDelta = mean == null ? null : row[m.key] - avg(withData.filter((x) => x.date !== sel).map((x) => x[m.key]));
   const idx = dates.indexOf(sel);
   const prevDay = dates[idx - 1], nextDay = dates[idx + 1];
   const groups = m.groups ? m.groups(row) : [];
   const note = m.note ? m.note(row) : "";
+  return `<section class="day">
+      <div class="day-main">
+        <div class="daynav">
+          <button class="step" type="button" ${prevDay ? `data-go="${url(id, prevDay, r)}" data-replace` : "disabled"} aria-label="Dia anterior">${icon("chevLeft")}</button>
+          <span class="when">${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}</span>
+          <button class="step" type="button" ${nextDay ? `data-go="${url(id, nextDay, r)}" data-replace` : "disabled"} aria-label="Próximo dia">${icon("chevRight")}</button>
+        </div>
+        <div class="big num">${m.fmt(row[m.key])}${m.unit ? `<small>${m.unit}</small>` : ""}</div>
+        <p class="status"><i class="dot tone-${tone}"></i><span>${status ? `${STATUS_TEXT[status]}, entre ${m.fmt(range[0])} e ${m.fmt(range[1])}${m.unit ? ` ${m.unit}` : ""}.` : "Ainda sem histórico suficiente para definir o seu normal."}</span></p>
+        ${note ? `<p class="muted" style="margin-top:10px">${esc(note)}</p>` : ""}
+      </div>
+      <div class="day-more">
+        <dl class="facts">${m.facts(row).map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd></div>`).join("")}</dl>
+        ${groups.map(barsHtml).join("")}
+      </div>
+    </section>
+    ${m.intraday ? `<section class="section" id="intra-sec">
+      <div class="section-head"><div><h2>${INTRA[m.intraday].title}</h2><p>${INTRA[m.intraday].about} ${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}.</p></div></div>
+      <div class="plot sm"><canvas id="c-intra" role="img" aria-label="${INTRA[m.intraday].title}"></canvas></div>
+      <div id="intra-extra"></div>
+    </section>` : ""}`;
+}
 
-  // Mapa de calor do ano inteiro
+export async function renderMetric(root, { id, q }, alive) {
+  const m = METRICS[id];
+  if (!m) { root.innerHTML = emptyHtml("Indicador não encontrado", "Volte para o resumo e escolha um dos indicadores."); return; }
+  if (!hasOverview(365)) root.innerHTML = loadingHtml(`Buscando ${m.label.toLowerCase()} do último ano`);
+  const ov = await loadOverview(365);
+  if (!alive()) return;
+
+  const r = RANGES.some(([v]) => v === Number(q.r)) ? Number(q.r) : 7;
+  const expanded = q.x === "1";
+  const byDate = new Map(ov.days.map((d) => [d.date, d]));
+  const dates = ov.days.filter((d) => d[m.key] != null).map((d) => d.date);
+  const crumb = `<a class="crumb" href="#/">${icon("chevLeft")} Resumo</a>`;
+  if (!dates.length) {
+    root.innerHTML = `${crumb}${emptyHtml(`Sem dados de ${m.label.toLowerCase()}`, "Nenhum registro no último ano. Sincronize o relógio com o aplicativo Garmin Connect.")}`;
+    return;
+  }
+
+  const today = ov.end;
+  let sel = /^\d{4}-\d{2}-\d{2}$/.test(q.d || "") && q.d <= today ? q.d : dates[dates.length - 1];
+  if (r !== 7 && !dates.includes(sel)) sel = dates[dates.length - 1];
+  live = { id, dates, sel, r, x: expanded };
+
+  const head = `${crumb}
+    <div class="page-head">
+      <div><h1>${esc(m.label)}</h1><p class="muted">${esc(m.about)}</p></div>
+      ${segmented("range", RANGES.map(([v, t]) => ({ href: url(id, sel, v, expanded), label: t })), RANGES.findIndex(([v]) => v === r))}
+    </div>`;
+
+  // Ano inteiro do indicador: o mapa de calor aparece nas duas visões.
   const level = levelize(ov.days.map((d) => d[m.key]));
   const cells = new Map();
   for (let d = ov.start; d <= ov.end; d = addDays(d, 1)) {
     const v = byDate.get(d)?.[m.key];
     cells.set(d, { level: level(v), tip: `${fmtDay(d)}: ${v == null ? "sem dado" : withUnit(m, v)}`, href: v == null ? undefined : url(id, d, r, expanded), replace: true });
   }
-
-  const list = [...withData].reverse();
-  const shown = expanded ? list : list.slice(0, 14);
-  const [c1, c2] = m.cols;
-
-  root.innerHTML = `
-    <a class="crumb" href="#/">${icon("chevLeft")} Hoje</a>
-    <div class="page-head">
-      <div><h1>${esc(m.label)}</h1><p class="muted">${esc(m.about)}</p></div>
-      <div class="tabs" role="group" aria-label="Período">
-        ${RANGES.map(([v, t]) => `<a href="${url(id, sel, v, expanded)}" data-replace${v === r ? ' aria-current="true"' : ""}>${t}</a>`).join("")}
-      </div>
-    </div>
-
-    <section class="day">
-      <div class="day-main">
-        <div class="daynav">
-          <button class="step" type="button" ${prevDay ? `data-go="${url(id, prevDay, r, expanded)}" data-replace` : "disabled"} aria-label="Dia anterior">${icon("chevLeft")}</button>
-          <span class="when">${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}</span>
-          <button class="step" type="button" ${nextDay ? `data-go="${url(id, nextDay, r, expanded)}" data-replace` : "disabled"} aria-label="Próximo dia">${icon("chevRight")}</button>
-        </div>
-        <div class="big num">${m.fmt(row[m.key])}${m.unit ? `<small>${m.unit}</small>` : ""}</div>
-        <p class="status"><i class="dot tone-${tone}"></i><span>${status ? `${STATUS_TEXT[status]}, entre ${m.fmt(range[0])} e ${m.fmt(range[1])}${m.unit ? ` ${m.unit}` : ""}.` : "Ainda sem histórico suficiente para definir o seu normal."}</span></p>
-        ${dayDelta != null ? `<p class="muted">${m.delta(dayDelta)} em relação à média do período.</p>` : ""}
-      </div>
-      <div class="day-more">
-        <dl class="facts">${m.facts(row).map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd></div>`).join("")}</dl>
-        ${note ? `<p class="note" style="margin-top:18px">${esc(note)}</p>` : ""}
-        ${groups.map(barsHtml).join("")}
-      </div>
-    </section>
-
-    ${m.intraday ? `<section class="section" id="intra-sec">
-      <div class="section-head"><div><h2>${INTRA[m.intraday].title}</h2><p>${INTRA[m.intraday].about} ${esc(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }))}.</p></div></div>
-      <div class="plot sm"><canvas id="c-intra" role="img" aria-label="${INTRA[m.intraday].title}"></canvas></div>
-      <div id="intra-extra"></div>
-    </section>` : ""}
-
-    <section class="section">
-      <div class="section-head"><div><h2>Dia a dia</h2><p>Clique em um dia para ver os detalhes. Use as setas do teclado para andar entre os dias.</p></div></div>
-      <div class="plot"><canvas id="c-main" role="img" aria-label="${esc(m.label)} por dia"></canvas></div>
-      ${id === "sleep" ? `<div class="section-head sub"><div><h2>Nota de sono</h2></div></div><div class="plot sm"><canvas id="c-score" role="img" aria-label="Nota de sono por dia"></canvas></div>` : ""}
-    </section>
-
-    <section class="stats">
-      <div class="stat"><span class="muted">Média</span><span class="num">${withUnit(m, mean)}</span>${prevMean != null ? `<span class="muted">${m.delta(mean - prevMean)} vs. período anterior</span>` : ""}</div>
-      <div class="stat"><span class="muted">Mais baixo</span><span class="num">${withUnit(m, lo[m.key])}</span><span class="muted">${esc(fmtDay(lo.date))}</span></div>
-      <div class="stat"><span class="muted">Mais alto</span><span class="num">${withUnit(m, hi[m.key])}</span><span class="muted">${esc(fmtDay(hi.date))}</span></div>
-      <div class="stat"><span class="muted">Dias com dado</span><span class="num">${withData.length} de ${rows.length}</span></div>
-    </section>
-
-    <section class="section">
+  const heat = `<section class="section">
       <div class="section-head"><div><h2>O ano inteiro</h2><p>Cada quadrado é um dia. Quanto mais claro, maior o valor.</p></div></div>
       ${heatmap({ from: ov.start, to: ov.end, cells, selected: sel })}
-    </section>
-
-    <section class="section">
-      <div class="section-head"><div><h2>Todos os dias</h2><p>${withData.length} dias nesse período.</p></div></div>
-      <div class="table-wrap"><table class="tbl">
-        <thead><tr><th>Dia</th><th class="r">${esc(m.label)}</th><th class="r">${esc(c1[0])}</th><th class="r">${esc(c2[0])}</th></tr></thead>
-        <tbody>${shown.map((x) => `<tr data-go="${url(id, x.date, r, expanded)}" data-replace aria-selected="${x.date === sel}">
-          <td>${esc(fmtDay(x.date, { weekday: "short", day: "numeric", month: "short" }))}</td>
-          <td class="r num">${withUnit(m, x[m.key])}</td><td class="r num muted">${esc(c1[1](x))}</td><td class="r num muted">${esc(c2[1](x))}</td></tr>`).join("")}</tbody>
-      </table></div>
-      ${!expanded && list.length > shown.length ? `<p class="more"><a class="link" href="${url(id, sel, r, true)}" data-replace>Mostrar todos os ${list.length} dias</a></p>` : ""}
     </section>`;
 
-  // Adia a troca de tela: o Chart.js ainda está tratando o clique e quebra se for destruído nesse momento.
-  const pick = (d) => setTimeout(() => go(url(id, d, r, expanded), { replace: true }), 0);
-  mount("c-main", chartConfig(m, rows, selIdx, pick));
-  if (id === "sleep") mount("c-score", scoreConfig(rows, selIdx, pick));
-  if (m.intraday) loadIntraday(m.intraday, sel, alive);
+  // Animações só quando a visão muda (outra semana, outro período), não ao escolher um dia dentro dela.
+  // A semana são os 7 dias que terminam em "e" (o fim da janela). Escolher um dia não move a janela.
+  const isDay = (x) => /^\d{4}-\d{2}-\d{2}$/.test(x || "");
+  let end = isDay(q.e) && q.e <= today ? q.e : sel;
+  if (r === 7 && (sel > end || sel < addDays(end, -6))) end = sel;
+  const key = `${id}|${r}|${r === 7 ? end : ""}`;
+  root.classList.toggle("static", key === lastKey);
+  lastKey = key;
+
+  if (r === 7) {
+    const ws = addDays(end, -6);
+    const rows = fillDays(ov.days, ws, end);
+    const prev = fillDays(ov.days, addDays(ws, -7), addDays(ws, -1));
+    const lastIn = (e) => { for (let i = 0; i < 7; i++) { const d = addDays(e, -i); if (byDate.get(d)?.[m.key] != null) return d; } return e; };
+    const prevEnd = addDays(end, -7);
+    const nextEnd = addDays(end, 7) > today ? today : addDays(end, 7);
+    const ctx = {
+      sel, today,
+      url: (d) => url(id, d, 7, false, end),
+      weekNav: {
+        prev: prevEnd >= ov.start ? url(id, lastIn(prevEnd), 7, false, prevEnd) : null,
+        next: end < today ? url(id, lastIn(nextEnd), 7, false, nextEnd) : null,
+      },
+    };
+    const window30 = fillDays(ov.days, addDays(sel, -30), sel);
+    root.innerHTML = `${head}${weekHtml(m, rows, prev, ctx)}${dayPanel(m, id, byDate.get(sel), sel, 7, window30, dates)}${heat}`;
+  } else {
+    const start = addDays(ov.end, -(r - 1));
+    const rows = fillDays(ov.days, start, ov.end);
+    const withData = rows.filter((x) => x[m.key] != null);
+    const selIdx = rows.findIndex((x) => x.date === sel);
+    const values = withData.map((x) => x[m.key]);
+    const mean = avg(values);
+    const hi = withData.reduce((a, b) => (b[m.key] > a[m.key] ? b : a));
+    const lo = withData.reduce((a, b) => (b[m.key] < a[m.key] ? b : a));
+    const before = fillDays(ov.days, addDays(start, -r), addDays(start, -1)).map((x) => x[m.key]);
+    const prevMean = before.filter((v) => v != null).length >= 5 ? avg(before) : null;
+    const list = [...withData].reverse();
+    const shown = expanded ? list : list.slice(0, 14);
+    const [c1, c2] = m.cols;
+
+    root.innerHTML = `${head}
+      <section class="stats">
+        <div class="stat"><span class="muted">Média</span><span class="num">${withUnit(m, mean)}</span>${prevMean != null ? `<span class="muted">${m.delta(mean - prevMean)} vs. período anterior</span>` : ""}</div>
+        <div class="stat"><span class="muted">Mais baixo</span><span class="num">${withUnit(m, lo[m.key])}</span><span class="muted">${esc(fmtDay(lo.date))}</span></div>
+        <div class="stat"><span class="muted">Mais alto</span><span class="num">${withUnit(m, hi[m.key])}</span><span class="muted">${esc(fmtDay(hi.date))}</span></div>
+        <div class="stat"><span class="muted">Dias com dado</span><span class="num">${withData.length} de ${rows.length}</span></div>
+      </section>
+      <section class="section">
+        <div class="section-head"><div><h2>Dia a dia</h2><p>Clique em um dia para ver os detalhes. As setas do teclado andam entre os dias.</p></div></div>
+        <div class="plot"><canvas id="c-main" role="img" aria-label="${esc(m.label)} por dia"></canvas></div>
+        ${id === "sleep" ? `<div class="section-head sub"><div><h2>Nota de sono</h2></div></div><div class="plot sm"><canvas id="c-score" role="img" aria-label="Nota de sono por dia"></canvas></div>` : ""}
+      </section>
+      ${dayPanel(m, id, byDate.get(sel), sel, r, rows, dates)}
+      ${heat}
+      <section class="section">
+        <div class="section-head"><div><h2>Todos os dias</h2><p>${withData.length} dias nesse período.</p></div></div>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>Dia</th><th class="r">${esc(m.label)}</th><th class="r">${esc(c1[0])}</th><th class="r">${esc(c2[0])}</th></tr></thead>
+          <tbody>${shown.map((x) => `<tr data-go="${url(id, x.date, r, expanded)}" data-replace aria-selected="${x.date === sel}">
+            <td>${esc(fmtDay(x.date, { weekday: "short", day: "numeric", month: "short" }))}</td>
+            <td class="r num">${withUnit(m, x[m.key])}</td><td class="r num muted">${esc(c1[1](x))}</td><td class="r num muted">${esc(c2[1](x))}</td></tr>`).join("")}</tbody>
+        </table></div>
+        ${!expanded && list.length > shown.length ? `<p class="more"><a class="link" href="${url(id, sel, r, true)}" data-replace>Mostrar todos os ${list.length} dias</a></p>` : ""}
+      </section>`;
+
+    // Adia a troca de tela: o Chart.js ainda está tratando o clique e quebra se for destruído nesse momento.
+    const pick = (d) => setTimeout(() => go(url(id, d, r, expanded), { replace: true }), 0);
+    mount("c-main", chartConfig(m, rows, selIdx, pick));
+    if (id === "sleep") mount("c-score", scoreConfig(rows, selIdx, pick));
+  }
+
+  settle(root);
+  if (m.intraday && byDate.get(sel)?.[m.key] != null) loadIntraday(m.intraday, sel, alive);
   scrollHeatToEnd(root);
 }

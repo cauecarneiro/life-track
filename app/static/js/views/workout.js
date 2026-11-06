@@ -1,14 +1,14 @@
 // Um treino: números, percurso, gráficos ao longo da distância, zonas e voltas.
-import { loadActivities, loadFit, hasFit } from "../api.js?v=3";
-import { mount, baseOptions, onCleanup, css } from "../charts.js?v=3";
-import { loadingHtml, barsHtml } from "../ui.js?v=3";
-import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js?v=3";
+import { loadActivities, loadFit, hasFit } from "../api.js?v=4";
+import { mount, baseOptions, onCleanup, css } from "../charts.js?v=4";
+import { loadingHtml, barsHtml } from "../ui.js?v=4";
+import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js?v=4";
 
 const TE_LABEL = {
   RECOVERY: "recuperação", AEROBIC_BASE: "base aeróbica", TEMPO: "ritmo", LACTATE_THRESHOLD: "limiar",
   VO2MAX: "VO2 máx.", ANAEROBIC_CAPACITY: "anaeróbico", SPRINT: "tiro",
 };
-const ZONE_COLORS = ["#4a3328", "#8a4a26", "#d4571a", "#ff7a1f", "#ffb43a"];
+const ZONE_COLORS = ["#48484a", "#636366", "#8e8e93", "#c7c7cc", "#ffffff"];
 
 const smooth = (values, w) => values.map((_, i) => avg(values.slice(Math.max(0, i - w), i + w + 1)));
 const kpi = (label, value, unit = "", note = "") =>
@@ -114,20 +114,20 @@ export async function renderWorkout(root, { id }, alive) {
     const line = pts.filter((p) => p.lat != null).map((p) => [p.lat, p.lon]);
     const map = L.map("map", { scrollWheelZoom: false });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap", className: "tiles-dark" }).addTo(map);
-    const path = L.polyline(line, { color: "#ff8a3d", weight: 4 }).addTo(map);
-    L.circleMarker(line[0], { radius: 6, color: "#000", weight: 2, fillColor: "#ffb43a", fillOpacity: 1 }).bindTooltip("Início").addTo(map);
-    L.circleMarker(line[line.length - 1], { radius: 6, color: "#ffb43a", weight: 2, fillColor: "#000", fillOpacity: 1 }).bindTooltip("Fim").addTo(map);
+    const path = L.polyline(line, { color: "#ffffff", weight: 3 }).addTo(map);
+    L.circleMarker(line[0], { radius: 6, color: "#000", weight: 2, fillColor: "#ff9f0a", fillOpacity: 1 }).bindTooltip("Início").addTo(map);
+    L.circleMarker(line[line.length - 1], { radius: 6, color: "#ff9f0a", weight: 2, fillColor: "#000", fillOpacity: 1 }).bindTooltip("Fim").addTo(map);
     map.fitBounds(path.getBounds(), { padding: [24, 24] });
     onCleanup(() => map.remove());
   }
 
   // ---------------------------------------------------------------- gráficos (um eixo por gráfico)
   const labels = pts.map((p) => (hasDist ? num((p.d || 0) / 1000, 1) : duration(p.t)));
-  const text = css("--accent-hi");
+  const text = css("--ink");
   const series = (cid, label, data, extra = {}, scaleExtra = {}, fmt = (v) => num(v)) =>
     mount(cid, {
       type: "line",
-      data: { labels, datasets: [{ label, data, borderColor: text, backgroundColor: "rgba(255,106,31,0.12)", borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0, spanGaps: true, ...extra }] },
+      data: { labels, datasets: [{ label, data, borderColor: text, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0, spanGaps: true, ...extra }] },
       options: baseOptions({
         scales: { x: { ticks: { maxTicksLimit: 9 } }, y: { ...scaleExtra } },
         plugins: { crosshair: { enabled: true }, tooltip: { callbacks: { title: (i) => (hasDist ? `${i[0].label} km` : i[0].label), label: (c) => `${label}: ${fmt(c.raw)}` } } },

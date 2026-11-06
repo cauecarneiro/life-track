@@ -1,5 +1,5 @@
 // Peças de interface compartilhadas entre as telas.
-import { esc, addDays } from "./util.js?v=3";
+import { esc, addDays, num } from "./util.js?v=4";
 
 export const loadingHtml = (text) => `<div class="empty"><p class="pulse">${esc(text)}</p></div>`;
 
@@ -26,3 +26,39 @@ export const barsHtml = ({ title, items }) => `<div class="bars">
     <span class="track"><i style="width:${i.total ? Math.max(i.value ? 1.5 : 0, (i.value / i.total) * 100).toFixed(1) : 0}%;background:${i.color}"></i></span>
     <span class="num">${esc(i.text)}</span></div>`).join("")}
 </div>`;
+
+// ---------------------------------------------------------------- controle segmentado (estilo iOS)
+
+const segPrev = new Map();
+
+/** Botões de mesma largura com um "polegar" que desliza até a opção escolhida. */
+export const segmented = (key, items, cur) => `<div class="seg" data-seg="${esc(key)}" style="--n:${items.length};--k:${cur}" role="group">
+  <span class="seg-thumb" aria-hidden="true"></span>${items.map((it, i) => `<a href="${esc(it.href)}" data-replace${i === cur ? ' aria-current="true"' : ""}>${esc(it.label)}</a>`).join("")}</div>`;
+
+const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Depois de desenhar a tela: o polegar desliza da opção anterior e os números principais contam até o valor. */
+export function settle(root) {
+  root.querySelectorAll("[data-seg]").forEach((el) => {
+    const key = el.dataset.seg, cur = el.style.getPropertyValue("--k");
+    const prev = segPrev.get(key);
+    segPrev.set(key, cur);
+    if (prev == null || prev === cur || calm()) return;
+    const thumb = el.querySelector(".seg-thumb");
+    thumb.style.transition = "none";
+    el.style.setProperty("--k", prev);
+    thumb.getBoundingClientRect();
+    thumb.style.transition = "";
+    el.style.setProperty("--k", cur);
+  });
+  if (calm() || root.classList.contains("static")) return;
+  root.querySelectorAll("[data-count]").forEach((el) => {
+    const to = Number(el.dataset.count), d = Number(el.dataset.d || 0), t0 = performance.now(), dur = 700;
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - (1 - k) ** 3;
+      el.textContent = num(to * e, d);
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}

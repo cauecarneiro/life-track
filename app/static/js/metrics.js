@@ -1,5 +1,5 @@
 // Definição dos indicadores: o que cada um mede, como formatar e o que mostrar do dia.
-import { num, sd, avg, sleepTime, minutesText, signed } from "./util.js?v=3";
+import { num, sd, avg, sleepTime, minutesText, signed } from "./util.js?v=4";
 
 export const QUALITY = { EXCELLENT: "excelente", GOOD: "boa", FAIR: "razoável", POOR: "ruim" };
 const QUALITY_FILL = { EXCELLENT: 1, GOOD: 0.75, FAIR: 0.5, POOR: 0.25 };
@@ -108,7 +108,7 @@ export const METRICS = {
       const out = [group("Fases do sono", [["Profundo", r.deepMin, "var(--s-deep)"], ["REM", r.remMin, "var(--s-rem)"], ["Leve", r.lightMin, "var(--s-light)"], ["Acordado", r.awakeMin, "var(--s-awake)"]])];
       const sub = r.sleepSub || {};
       const names = { totalDuration: "Duração", stress: "Estresse", awakeCount: "Despertares", remPercentage: "REM", lightPercentage: "Sono leve", deepPercentage: "Sono profundo", restlessness: "Agitação" };
-      const items = Object.entries(names).filter(([k]) => sub[k]?.q).map(([k, label]) => ({ label, value: QUALITY_FILL[sub[k].q] || 0, total: 1, color: "var(--accent)", text: QUALITY[sub[k].q] || sub[k].q.toLowerCase() }));
+      const items = Object.entries(names).filter(([k]) => sub[k]?.q).map(([k, label]) => ({ label, value: QUALITY_FILL[sub[k].q] || 0, total: 1, color: "var(--ink)", text: QUALITY[sub[k].q] || sub[k].q.toLowerCase() }));
       if (items.length) out.push({ title: "Como a Garmin avaliou cada parte", items });
       return out;
     },
@@ -180,9 +180,23 @@ export const METRICS = {
     ],
     groups: (r) => {
       const s = r.stressMin || {};
-      return [group("Como o dia se dividiu", [["Repouso", s.rest, "var(--s-deep)"], ["Baixo", s.low, "var(--s-rem)"], ["Médio", s.medium, "var(--s-light)"], ["Alto", s.high, "#d0d0d0"], ["Atividade", s.activity, "var(--s-awake)"]])];
+      return [group("Como o dia se dividiu", [["Repouso", s.rest, "var(--s-deep)"], ["Baixo", s.low, "var(--s-rem)"], ["Médio", s.medium, "var(--s-light)"], ["Alto", s.high, "var(--ink)"], ["Atividade", s.activity, "var(--s-awake)"]])];
     },
     cols: [["Em repouso", (r) => (r.stressMin?.rest != null ? minutesText(r.stressMin.rest) : "—")], ["Alto", (r) => (r.stressMin?.high != null ? minutesText(r.stressMin.high) : "—")]],
+  },
+
+  balance: {
+    id: "balance", icon: "target", label: "Equilíbrio", key: "balance", unit: "%", better: "up", kind: "bars", max: 100,
+    sub: "No seu normal",
+    about: "Quantos dos seis indicadores principais (Body Battery, sono, passos, estresse, HRV e FC de repouso) ficaram dentro da sua faixa normal, calculada com os 30 dias anteriores.",
+    fmt: (v) => num(v),
+    delta: (d) => `${signed(d)} pontos`,
+    hint: (r) => (r.balanceKnown ? `${r.balanceIn.length} de ${r.balanceKnown} no normal` : ""),
+    facts: (r) => [
+      ["Dentro do normal", r.balanceIn?.length ? r.balanceIn.join(", ") : "nenhum"],
+      ["Fora do normal", r.balanceOut?.length ? r.balanceOut.join(", ") : "nenhum"],
+    ],
+    cols: [["No normal", (r) => (r.balanceKnown ? `${r.balanceIn.length} de ${r.balanceKnown}` : "—")], ["Fora", (r) => r.balanceOut?.join(", ") || "—"]],
   },
 
   resp: {
@@ -233,7 +247,7 @@ export const METRICS = {
 };
 
 // Body Battery, sono, passos e estresse sempre vêm primeiro em qualquer lista ou grade.
-export const ORDER = ["battery", "sleep", "steps", "stress", "hrv", "rhr", "intensity", "hr", "resp", "calories", "floors"];
+export const ORDER = ["battery", "sleep", "steps", "stress", "calories", "balance", "hr", "hrv", "rhr", "intensity", "resp", "floors"];
 
 /** Faixa "normal" do dia: a faixa da Garmin para o HRV, média ± desvio da janela para o resto. */
 export function normalRange(m, windowRows, row) {
@@ -259,3 +273,22 @@ export function toneOf(m, status) {
 
 export const STATUS_TEXT = { in: "Dentro do seu normal", above: "Acima do seu normal", below: "Abaixo do seu normal" };
 export const NEED_TEXT = NEED;
+
+// Equilíbrio de cada dia: quantos indicadores principais caíram na faixa normal dos 30 dias anteriores.
+const BALANCE_IDS = ["battery", "sleep", "steps", "stress", "hrv", "rhr"];
+
+export function addBalance(days) {
+  days.forEach((row, i) => {
+    const prior = days.slice(Math.max(0, i - 30), i);
+    const inside = [], outside = [];
+    for (const id of BALANCE_IDS) {
+      const m = METRICS[id];
+      const st = statusOf(row[m.key], normalRange(m, prior, row));
+      if (st === "in") inside.push(m.label);
+      else if (st) outside.push(m.label);
+    }
+    const known = inside.length + outside.length;
+    if (known >= 3) Object.assign(row, { balance: Math.round((inside.length / known) * 100), balanceIn: inside, balanceOut: outside, balanceKnown: known });
+  });
+  return days;
+}

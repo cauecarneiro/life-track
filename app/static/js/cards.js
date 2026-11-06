@@ -1,11 +1,11 @@
 // Cartões da tela inicial e das páginas de resumo. Cada um mostra um dado, o dia escolhido e a tendência recente.
-import { METRICS, QUALITY, normalRange, statusOf } from "./metrics.js?v=3";
-import { esc, num, avg, fmtDay, addDays, minutesText, sleepTime, hhmm, cap, icon, parseDay, typeName, duration } from "./util.js?v=3";
+import { METRICS, QUALITY } from "./metrics.js?v=4";
+import { esc, num, avg, fmtDay, addDays, minutesText, sleepTime, hhmm, cap, icon, parseDay, typeName, duration } from "./util.js?v=4";
 
 const has = (v) => v != null && !Number.isNaN(v);
 const WEEKDAY = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-const ZONE_COLORS = ["#4a3328", "#8a4a26", "#d4571a", "#ff7a1f", "#ffb43a"];
+const ZONE_COLORS = ["#48484a", "#636366", "#8e8e93", "#c7c7cc", "#ffffff"];
 
 /** Valor de um indicador no dia. Hoje, o que ainda acumula vem de row.live e é marcado como parcial. */
 export function valueOf(m, row) {
@@ -18,7 +18,7 @@ export function valueOf(m, row) {
 const when = (ctx, partial) => (ctx.isToday ? (partial ? "Hoje, até agora" : "Hoje") : cap(fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" })));
 
 function head(title, { chip = "", go = true, ic = "pulse" } = {}) {
-  return `<header class="card-h"><span class="tile">${icon(ic)}</span><h3>${esc(title)}</h3>${chip}${go ? `<span class="go">${icon("arrowUpRight")}</span>` : ""}</header>`;
+  return `<header class="card-h">${icon(ic)}<h3>${esc(title)}</h3>${chip}${go ? `<span class="go">${icon("chevRight")}</span>` : ""}</header>`;
 }
 
 function chipFor(v, mean) {
@@ -110,7 +110,8 @@ export function metricCard(id, ctx, opts = {}) {
     body = `<div class="val"><b>—</b></div><p class="sub">Sem dado neste dia.</p>`;
   } else {
     const sub = `<p class="sub">${esc(id === "sleep" || id === "hrv" ? m.sub : when(ctx, partial))}${hint ? ` · ${esc(hint)}` : ""}</p>`;
-    const value = `<div class="val"><b class="num">${m.fmt(v)}</b>${m.unit ? `<small>${m.unit}</small>` : ""}</div>`;
+    const counts = id !== "sleep" && Number.isInteger(v);
+    const value = `<div class="val"><b class="num"${counts ? ` data-count="${v}"` : ""}>${m.fmt(v)}</b>${m.unit ? `<small>${m.unit}</small>` : ""}</div>`;
     if (id === "steps") {
       const p = live.stepGoal ? Math.min(100, (v / live.stepGoal) * 100) : 0;
       body = `<div class="val-row">${value}<div class="ring"><i style="--p:${p.toFixed(0)}"></i><b class="num">${live.stepGoal ? `${Math.round(p)}%` : ""}</b></div></div>${sub}${barsViz(m, vals, mean, ctx)}`;
@@ -128,7 +129,7 @@ function stressCard(ctx, opts = {}) {
   const m = METRICS.stress;
   const { last, v, partial, mean } = seriesFor(m, ctx);
   const days = ctx.win.slice(-7);
-  const SEG = [["rest", "rgba(255,255,255,.16)", "Repouso"], ["low", "#8a4a26", "Baixo"], ["medium", "#ff7a1f", "Médio"], ["high", "#ffc247", "Alto"]];
+  const SEG = [["rest", "var(--s1)", "Repouso"], ["low", "var(--s2)", "Baixo"], ["medium", "var(--s3)", "Médio"], ["high", "var(--s4)", "Alto"]];
   const cols = days.map((r, i) => {
     const s = r.stressMin || {};
     const segs = SEG.map(([k, c]) => `<i style="flex:${s[k] || 0};background:${c}"></i>`).join("");
@@ -141,84 +142,6 @@ function stressCard(ctx, opts = {}) {
     <p class="sub">${esc(when(ctx, partial))}${has(v) && last.stressMin?.high != null ? ` · alto por ${minutesText((last.stressMin || {}).high)}` : ""}</p>
     ${hasDist ? `<div class="viz"><div class="sblocks">${cols}</div><div class="sblocks-l">${letters(days)}</div>
       <div class="legend">${SEG.map(([, c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join("")}</div></div>` : ""}
-  </article>`;
-}
-
-// ---------------------------------------------------------------- gauge da Body Battery
-
-const BB_STATE = (v) => (v >= 76 ? "alta" : v >= 51 ? "moderada" : v >= 26 ? "baixa" : "muito baixa");
-
-export function gaugeCard(ctx, { span = "" } = {}) {
-  const m = METRICS.battery;
-  const row = ctx.win[ctx.win.length - 1];
-  const v = ctx.isToday ? row.bbLatest ?? row.bbMax : row.bbMax;
-  if (!has(v)) return `<article class="card hot${span ? ` ${span}` : ""}">${head("Energia", { ic: "battery", go: false })}<p class="note">Sem leituras de Body Battery neste dia.</p></article>`;
-  const N = 44, cx = 150, cy = 150, r1 = 108, r2 = 132, a0 = -125, a1 = 125;
-  let ticks = "";
-  for (let i = 0; i < N; i++) {
-    const f = i / (N - 1), ang = ((a0 + (a1 - a0) * f) * Math.PI) / 180;
-    const x1 = cx + r1 * Math.sin(ang), y1 = cy - r1 * Math.cos(ang), x2 = cx + r2 * Math.sin(ang), y2 = cy - r2 * Math.cos(ang);
-    const on = f * 100 <= v ? ` f${f > 0.7 ? " hi" : ""}` : "";
-    ticks += `<line class="t${on}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
-  }
-  return `<article class="card hot${span ? ` ${span}` : ""}" data-go="#/m/battery" tabindex="0" role="link" aria-label="Body Battery">
-    ${head("Energia", { ic: "battery", chip: `<span class="chip">${ctx.isToday ? "agora" : "pico do dia"}</span>` })}
-    <div class="gauge-wrap"><svg viewBox="0 0 300 230" aria-hidden="true">${ticks}</svg>
-      <div class="gauge-c"><b class="num">${num(v)}<small>/100</small></b><span>${esc(m.label)}</span></div></div>
-    <p class="gauge-t">Energia e recuperação</p>
-    <p class="gauge-s">Reserva ${BB_STATE(v)}${row.bbMin != null ? ` · mínimo do dia ${num(row.bbMin)}` : ""}</p>
-    <div class="rows"><div class="r"><span>Carregou</span><b class="num">${num(row.bbCharged)}</b></div><div class="r"><span>Gastou</span><b class="num">${num(row.bbDrained)}</b></div></div>
-    ${barsViz(m, ctx.win.map((r) => r.bbMax ?? null), null, ctx)}
-  </article>`;
-}
-
-// ---------------------------------------------------------------- equilíbrio (indicadores no seu normal)
-
-function smoothPath(pts) {
-  if (pts.length < 2) return "";
-  let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
-  }
-  return d;
-}
-
-function wavePts(rows, key) {
-  const v = rows.map((r) => r[key]);
-  const have = v.filter(has);
-  if (have.length < 3) return [];
-  const lo = Math.min(...have), hi = Math.max(...have), s = Math.max(1e-6, hi - lo);
-  return v.map((x, i) => (has(x) ? [(i / (rows.length - 1)) * 1000, 90 - ((x - lo) / s) * 80] : null)).filter(Boolean);
-}
-
-export function balanceCard(ctx, { span = "" } = {}) {
-  const row = ctx.win[ctx.win.length - 1];
-  let known = 0, inside = 0;
-  for (const id of ["battery", "sleep", "steps", "stress", "hrv", "rhr"]) {
-    const m = METRICS[id];
-    const { v, partial } = valueOf(m, row);
-    if (!has(v) || partial) continue;
-    const st = statusOf(v, normalRange(m, ctx.all.filter((r) => r.date !== ctx.sel), row));
-    if (!st) continue;
-    known++;
-    if (st === "in") inside++;
-  }
-  const score = known ? Math.round((inside / known) * 100) : null;
-  const label = score == null ? "Sem histórico suficiente" : score >= 75 ? "Ótimo equilíbrio" : score >= 50 ? "Bom equilíbrio" : "Atenção aos sinais";
-  const hrvP = smoothPath(wavePts(ctx.win, "hrv")), slP = smoothPath(wavePts(ctx.win, "sleepH"));
-  const sleepAvg = avg(ctx.win.map((r) => r.sleepH)), bbAvg = avg(ctx.win.map((r) => r.bbMax));
-  return `<article class="card bal${span ? ` ${span}` : ""}" data-go="#/vitais" tabindex="0" role="link" aria-label="Equilíbrio">
-    ${head("Equilíbrio", { ic: "target", chip: '<span class="chip">14 dias</span>' })}
-    <div class="bal-n num">${score == null ? "—" : score}</div>
-    <div class="bal-t">${label}</div>
-    <p class="sub">${known ? `${inside} de ${known} indicadores dentro do seu normal` : "Sincronize o relógio para calcular"}</p>
-    <div class="waves"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><path class="w2" d="${slP}"/><path class="w1" d="${hrvP}"/></svg></div>
-    <div class="legend" style="justify-content:center"><span><i style="background:var(--accent-hi)"></i>HRV</span><span><i style="background:#fff"></i>Sono</span><span>cada linha na sua própria escala</span></div>
-    <div class="trio"><div><span>Sono médio</span><b class="num">${has(sleepAvg) ? sleepTime(sleepAvg) : "—"}</b></div>
-      <div class="mid"><span>Detalhes</span><a href="#/vitais" aria-label="Abrir sinais vitais">${icon("arrowUpRight")}</a></div>
-      <div><span>Body Battery médio</span><b class="num">${has(bbAvg) ? num(bbAvg) : "—"}</b></div></div>
   </article>`;
 }
 
@@ -236,7 +159,7 @@ export function curveHtml(points, { lo, hi, xMax = 1440, tall = false } = {}) {
   const area = `${line}L${X(points[points.length - 1][0]).toFixed(1)} 100L${X(points[0][0]).toFixed(1)} 100Z`;
   const end = points[points.length - 1];
   return `<div class="curve${tall ? " tall" : ""}"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:#ff6a1f" stop-opacity=".45"/><stop offset="1" style="stop-color:#ff6a1f" stop-opacity="0"/></linearGradient></defs>
+    <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
     <path class="ar" d="${area}"/><path class="ln" d="${line}"/></svg>
     <span class="pt" style="left:${(X(end[0]) / 10).toFixed(2)}%;top:${Y(end[1]).toFixed(2)}%"></span></div>`;
 }
@@ -260,7 +183,7 @@ export function fillHr(el, day, ctx) {
   const peak = bv.indexOf(hi);
   const bars = bv.map((v, i) => `<i class="${i === peak ? "pk" : ""}" style="height:${has(v) ? 18 + ((v - lo) / s) * 82 : 5}%"${has(v) ? "" : ' data-empty'}></i>`).join("");
   const mean = avg(pts.map((p) => p[1]));
-  el.innerHTML = `${head("Frequência cardíaca", { ic: "heart", chip: `<span class="chip">${esc(ctx.isToday ? "hoje" : fmtDay(ctx.sel))}</span>` })}
+  el.innerHTML = `${head("Frequência cardíaca", { ic: "heart" })}
     <div class="val"><b class="num">${num(mean)}</b><small>bpm de média</small></div>
     <div class="viz"><div class="wave" role="img" aria-label="Batimentos ao longo do dia">${bars}</div>
       <div class="axis"><span>00:00</span><span>12:00</span><span>24:00</span></div></div>

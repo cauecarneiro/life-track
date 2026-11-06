@@ -2,47 +2,36 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#0a0605">
+  <meta name="theme-color" content="#000000">
   <title>Life Track</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
-  <div class="glow" aria-hidden="true"><i></i><i></i><i></i></div>
-
-  <aside class="rail">
-    <a class="mark" href="#/" aria-label="Life Track, início">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>
-    </a>
+  <aside class="side">
+    <a class="brand" href="#/">Life Track</a>
+    <div class="search" role="search">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar" autocomplete="off" spellcheck="false" aria-label="Buscar um dado, como sono, HRV ou peso">
+      <ul id="found" class="found" hidden></ul>
+    </div>
     <nav class="nav" id="nav" aria-label="Seções"></nav>
-    <button class="rbtn" type="button" id="refresh" aria-label="Buscar de novo na Garmin" data-tip="Buscar de novo na Garmin">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
-    </button>
+    <div class="side-foot">
+      <button class="refresh" type="button" id="refresh">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
+        Atualizar dados
+      </button>
+      <p>Lido direto da API da Garmin. Nada fica salvo.</p>
+    </div>
   </aside>
 
-  <div class="shell">
-    <header class="top">
-      <div class="brand"><b>Life Track</b><span>Painel de saúde</span></div>
-      <div class="search" role="search">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Pergunte por um dado: sono, HRV, peso..." autocomplete="off" spellcheck="false" aria-label="Buscar um dado">
-        <ul id="found" class="found" hidden></ul>
-      </div>
-    </header>
-
-    <main id="view" tabindex="-1"></main>
-
-    <footer class="foot">Dados lidos direto da API da Garmin. Nada fica salvo.</footer>
-  </div>
+  <main id="view" tabindex="-1"></main>
   <div id="tip" class="tip" role="tooltip" hidden></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script type="module" src="js/main.js?v=3"></script>
+  <script type="module" src="js/main.js?v=4"></script>
 </body>
 </html>
