@@ -54,7 +54,7 @@ O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se 
 
 - A chave fica em um arquivo da sua máquina e **nunca vai para o navegador**.
 - O servidor guarda respostas em **memória** por pouco tempo (5 minutos para visão geral e lista de treinos, 1 hora para o detalhe de um treino). Ao reiniciar, tudo some. O botão de atualizar no canto superior direito limpa esse cache.
-- Localmente não há login e o servidor escuta apenas em `127.0.0.1`. **Não exponha na internet sem a senha**: hospedado, defina `APP_PASSWORD` (veja "Hospedagem").
+- Localmente não há login e o servidor escuta apenas em `127.0.0.1`. Hospedado, o painel fica aberto a quem souber o endereço, a menos que você defina `APP_PASSWORD` (veja "Hospedagem").
 
 ## Instalação
 
@@ -226,9 +226,10 @@ Este é um projeto independente, sem vínculo com Garmin, Oura, WHOOP ou Apple. 
 
 ## Hospedagem (Render, plano grátis)
 
-O `render.yaml` cria o serviço a partir do `Dockerfile`. No Render: **New, Blueprint**, escolha este repositório e preencha as duas variáveis secretas:
+O `render.yaml` cria o serviço a partir do `Dockerfile`. No Render: **New, Blueprint**, escolha este repositório e preencha a variável secreta:
 
-- `GARMIN_PERSONAL_API_KEY`: a chave pessoal da Garmin (vale no máximo 1 ano; ao vencer, gere outra e troque aqui).
-- `APP_PASSWORD`: a senha do painel. O navegador pede usuário (qualquer um) e essa senha.
+- `GARMIN_PERSONAL_API_KEY`: a chave pessoal da Garmin (vale no máximo 1 ano; ao vencer, gere outra e troque em Environment).
+
+Sem mais nada, o painel abre **sem senha**: quem tiver o endereço vê seus dados. Não compartilhe o link. Para proteger, crie no Render a variável `APP_PASSWORD`; o navegador passa a pedir usuário (qualquer um) e essa senha.
 
 No plano grátis o serviço dorme após 15 minutos sem uso; a primeira visita depois disso leva cerca de 1 minuto. Cada push na `main` publica a nova versão.
