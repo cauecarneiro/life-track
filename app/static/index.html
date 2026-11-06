@@ -4,33 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#050505">
+  <meta name="theme-color" content="#0a0605">
   <title>Life Track</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="bar">
-    <div class="bar-in">
-      <a class="mark" href="#/"><i aria-hidden="true"></i>Life Track</a>
-      <nav class="pills" aria-label="Seções" id="nav"></nav>
+  <div class="glow" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <aside class="rail">
+    <a class="mark" href="#/" aria-label="Life Track, início">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>
+    </a>
+    <nav class="nav" id="nav" aria-label="Seções"></nav>
+    <button class="rbtn" type="button" id="refresh" aria-label="Buscar de novo na Garmin" data-tip="Buscar de novo na Garmin">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
+    </button>
+  </aside>
+
+  <div class="shell">
+    <header class="top">
+      <div class="brand"><b>Life Track</b><span>Painel de saúde</span></div>
       <div class="search" role="search">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Buscar um dado, como sono ou HRV" autocomplete="off" spellcheck="false" aria-label="Buscar um dado">
+        <input id="q" type="search" placeholder="Pergunte por um dado: sono, HRV, peso..." autocomplete="off" spellcheck="false" aria-label="Buscar um dado">
         <ul id="found" class="found" hidden></ul>
       </div>
-      <button class="circle" type="button" id="refresh" aria-label="Buscar de novo na Garmin" title="Buscar de novo na Garmin">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
-      </button>
-    </div>
-  </header>
+    </header>
 
-  <main id="view" tabindex="-1"></main>
+    <main id="view" tabindex="-1"></main>
 
-  <footer class="foot">Dados lidos direto da API da Garmin. Nada fica salvo.</footer>
+    <footer class="foot">Dados lidos direto da API da Garmin. Nada fica salvo.</footer>
+  </div>
   <div id="tip" class="tip" role="tooltip" hidden></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>

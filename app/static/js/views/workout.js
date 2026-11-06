@@ -8,7 +8,7 @@ const TE_LABEL = {
   RECOVERY: "recuperação", AEROBIC_BASE: "base aeróbica", TEMPO: "ritmo", LACTATE_THRESHOLD: "limiar",
   VO2MAX: "VO2 máx.", ANAEROBIC_CAPACITY: "anaeróbico", SPRINT: "tiro",
 };
-const ZONE_COLORS = ["#3a3a3a", "#5e5e5e", "#8a8a8a", "#bcbcbc", "#f1f1f1"];
+const ZONE_COLORS = ["#4a3328", "#8a4a26", "#d4571a", "#ff7a1f", "#ffb43a"];
 
 const smooth = (values, w) => values.map((_, i) => avg(values.slice(Math.max(0, i - w), i + w + 1)));
 const kpi = (label, value, unit = "", note = "") =>
@@ -114,20 +114,20 @@ export async function renderWorkout(root, { id }, alive) {
     const line = pts.filter((p) => p.lat != null).map((p) => [p.lat, p.lon]);
     const map = L.map("map", { scrollWheelZoom: false });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap", className: "tiles-dark" }).addTo(map);
-    const path = L.polyline(line, { color: "#f1f1f1", weight: 3 }).addTo(map);
-    L.circleMarker(line[0], { radius: 6, color: "#000", weight: 2, fillColor: "#f1f1f1", fillOpacity: 1 }).bindTooltip("Início").addTo(map);
-    L.circleMarker(line[line.length - 1], { radius: 6, color: "#f1f1f1", weight: 2, fillColor: "#000", fillOpacity: 1 }).bindTooltip("Fim").addTo(map);
+    const path = L.polyline(line, { color: "#ff8a3d", weight: 4 }).addTo(map);
+    L.circleMarker(line[0], { radius: 6, color: "#000", weight: 2, fillColor: "#ffb43a", fillOpacity: 1 }).bindTooltip("Início").addTo(map);
+    L.circleMarker(line[line.length - 1], { radius: 6, color: "#ffb43a", weight: 2, fillColor: "#000", fillOpacity: 1 }).bindTooltip("Fim").addTo(map);
     map.fitBounds(path.getBounds(), { padding: [24, 24] });
     onCleanup(() => map.remove());
   }
 
   // ---------------------------------------------------------------- gráficos (um eixo por gráfico)
   const labels = pts.map((p) => (hasDist ? num((p.d || 0) / 1000, 1) : duration(p.t)));
-  const text = css("--text");
+  const text = css("--accent-hi");
   const series = (cid, label, data, extra = {}, scaleExtra = {}, fmt = (v) => num(v)) =>
     mount(cid, {
       type: "line",
-      data: { labels, datasets: [{ label, data, borderColor: text, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0, spanGaps: true, ...extra }] },
+      data: { labels, datasets: [{ label, data, borderColor: text, backgroundColor: "rgba(255,106,31,0.12)", borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0, spanGaps: true, ...extra }] },
       options: baseOptions({
         scales: { x: { ticks: { maxTicksLimit: 9 } }, y: { ...scaleExtra } },
         plugins: { crosshair: { enabled: true }, tooltip: { callbacks: { title: (i) => (hasDist ? `${i[0].label} km` : i[0].label), label: (c) => `${label}: ${fmt(c.raw)}` } } },

@@ -22,7 +22,7 @@ const NAV = [
   ["sleep", "#/m/sleep", "Sono", "moon"],
   ["workouts", "#/treinos", "Treinos", "dumbbell"],
 ];
-document.getElementById("nav").innerHTML = NAV.map(([id, href, label, ic]) => `<a href="${href}" data-nav="${id}">${icon(ic)}${label}</a>`).join("");
+document.getElementById("nav").innerHTML = NAV.map(([id, href, label, ic]) => `<a href="${href}" data-nav="${id}" data-tip="${label}" aria-label="${label}">${icon(ic)}</a>`).join("");
 
 function markNav(segs) {
   const [a, b] = segs;

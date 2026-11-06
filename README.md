@@ -13,11 +13,11 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-O design é minimalista e escuro: preto de base, cartões em degradê de cinza, o branco como único destaque e uma família de fonte (Geist). A barra superior leva a cada página e tem uma busca por dado ("sono", "HRV", "peso"...).
+O design é escuro e quente: fundo preto com brilho laranja ao fundo, cartões de vidro fosco, menu lateral flutuante e uma abertura com saudação e um resumo do dia escrito a partir dos seus números. O laranja é o único destaque; a fonte é a Geist, com a Instrument Serif nos títulos grandes. Body Battery, sono, passos e estresse aparecem sempre primeiro em qualquer grade ou lista. A busca no topo leva direto a qualquer dado.
 
 **Início**
-- Cartões do dia escolhido: Body Battery, HRV, FC de repouso, sono (com as fases), esforço (minutos de intensidade), frequência cardíaca (curva do dia inteiro), passos, estresse, respiração, calorias, peso, idade física, zonas de FC e hidratação. Cada cartão traz o valor, a variação contra a média dos 14 dias anteriores e as barras ou a linha desses dias.
-- O calendário do cartão da direita troca o dia de **todos** os cartões. Setas e atalhos andam dia a dia.
+- Cartões do dia escolhido, nesta ordem: energia (medidor da Body Battery), sono (com as fases), passos (com anel da meta) e estresse (blocos por faixa), depois equilíbrio (quantos indicadores estão no seu normal), frequência cardíaca (onda do dia inteiro), HRV, FC de repouso, Body Battery (faixa de cada dia), esforço, respiração, calorias, peso, idade física, calendário, zonas de FC e hidratação. Cada cartão traz o valor, a variação contra a média dos 14 dias anteriores e as barras ou a linha desses dias.
+- O seletor de dia no topo e o calendário trocam o dia de **todos** os cartões. Setas e atalhos andam dia a dia.
 - "Sua semana": sete dias lado a lado, com todos os indicadores principais.
 - O mapa de calor de treinos dos últimos 12 meses (um quadrado por dia, quanto mais claro, mais minutos) e os últimos treinos.
 

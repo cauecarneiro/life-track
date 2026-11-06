@@ -24,7 +24,7 @@ const withUnit = (m, v) => `${m.fmt(v)}${m.unit ? ` ${m.unit}` : ""}`;
 function chartConfig(m, rows, selIdx, pick) {
   const dates = rows.map((r) => r.date);
   const labels = dates.map((d) => fmtDay(d));
-  const text = css("--text"), muted = css("--muted");
+  const text = css("--accent"), muted = css("--muted");
   const n = rows.length;
   const hasData = new Set(rows.filter((r) => r[m.key] != null).map((r) => r.date));
 
@@ -74,7 +74,7 @@ function chartConfig(m, rows, selIdx, pick) {
         type: "line",
         data: { labels, datasets: [
           { type: "line", label: "Faixa mínima", data: rows.map((r) => r.hrvLow ?? null), borderColor: "transparent", pointRadius: 0, spanGaps: true, order: 3 },
-          { type: "line", label: "Faixa equilibrada", data: rows.map((r) => r.hrvHigh ?? null), borderColor: "transparent", backgroundColor: "rgba(255,255,255,0.09)", fill: "-1", pointRadius: 0, spanGaps: true, order: 3 },
+          { type: "line", label: "Faixa equilibrada", data: rows.map((r) => r.hrvHigh ?? null), borderColor: "transparent", backgroundColor: "rgba(255,106,31,0.13)", fill: "-1", pointRadius: 0, spanGaps: true, order: 3 },
           line("Noite", rows.map((r) => r.hrv ?? null), { order: 1 }),
           { type: "line", label: "Média de 7 dias", data: rows.map((r) => r.hrvWeekly ?? null), borderColor: muted, borderDash: [4, 4], borderWidth: 1.25, pointRadius: 0, spanGaps: true, order: 2 },
         ] },
@@ -121,7 +121,7 @@ function chartConfig(m, rows, selIdx, pick) {
 
 function scoreConfig(rows, selIdx, pick) {
   const dates = rows.map((r) => r.date);
-  const text = css("--text");
+  const text = css("--accent");
   const n = rows.length;
   return {
     type: "line",
@@ -160,8 +160,8 @@ async function loadIntraday(kind, sel, alive) {
   let day;
   try { day = await loadDay(sel); } catch (e) { document.getElementById("intra-extra")?.insertAdjacentHTML("beforeend", `<p class="note">Não foi possível carregar o detalhe do dia: ${esc(e.message)}</p>`); return; }
   if (!alive() || !document.getElementById("c-intra")) return;
-  const text = css("--text");
-  const dataset = (pts) => ({ data: pts.map((p) => ({ x: p[0], y: p[1] })), borderColor: text, backgroundColor: "rgba(255,255,255,0.07)", borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: true, parsing: false });
+  const text = css("--accent-hi");
+  const dataset = (pts) => ({ data: pts.map((p) => ({ x: p[0], y: p[1] })), borderColor: text, backgroundColor: "rgba(255,106,31,0.14)", borderWidth: 1.75, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: true, parsing: false });
   const extra = document.getElementById("intra-extra");
   const empty = (t) => { document.getElementById("c-intra").closest(".plot").outerHTML = `<p class="muted">${t}</p>`; };
 
@@ -176,7 +176,7 @@ async function loadIntraday(kind, sel, alive) {
       const mins = [0, 0, 0, 0, 0, 0];
       for (const [, v] of pts) mins[floors.filter((f) => v >= f).length] += 2;
       const names = ["Abaixo da zona 1", "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5"];
-      const colors = ["#2f2f2f", "#4a4a4a", "#6c6c6c", "#9a9a9a", "#cfcfcf", "#f4f4f4"];
+      const colors = ["#3a2d26", "#5a3b2a", "#8a4a26", "#d4571a", "#ff7a1f", "#ffb43a"];
       const total = mins.reduce((a, b) => a + b, 0);
       extra.innerHTML = barsHtml({ title: "Tempo em cada zona de frequência", items: mins.map((v, i) => ({ label: names[i], value: v, total, color: colors[i], text: `${minutesText(v)} · ${Math.round((v / total) * 100)}%` })) });
     }).catch(() => {});

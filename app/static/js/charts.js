@@ -41,7 +41,7 @@ const selectedBand = {
     const step = n > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : chartArea.width;
     const cx = x.getPixelForValue(opts.index);
     ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,0.07)";
+    ctx.fillStyle = "rgba(255,106,31,0.12)";
     ctx.fillRect(cx - step / 2, chartArea.top, step, chartArea.bottom - chartArea.top);
     ctx.restore();
   },
@@ -57,7 +57,7 @@ const crosshair = {
     const { ctx, chartArea } = chart;
     const x = tip.dataPoints[0].element.x;
     ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.strokeStyle = "rgba(255,180,58,0.55)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, chartArea.top);
@@ -84,8 +84,8 @@ export function baseOptions(extra = {}) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#101010", titleColor: css("--text"), bodyColor: css("--muted"),
-        borderColor: css("--line2"), borderWidth: 1, padding: 10, cornerRadius: 8, boxPadding: 4,
+        backgroundColor: "#1d130e", titleColor: css("--ink"), bodyColor: css("--muted"),
+        borderColor: "rgba(255,255,255,0.16)", borderWidth: 1, padding: 10, cornerRadius: 8, boxPadding: 4,
         titleFont: { weight: "500" },
       },
     },
@@ -118,5 +118,5 @@ export function spark(values, { w = 240, h = 40, pad = 3 } = {}) {
     pen = true;
   });
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-    <path d="${d}" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+    <path d="${d}" fill="none" stroke="#ff8a3d" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
 }

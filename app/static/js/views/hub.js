@@ -20,39 +20,49 @@ const PROFILE_FILL = ["weight", "fitness", "zones", "water"];
 // O dia só vale como padrão quando a noite já sincronizou; senão a home abriria vazia.
 const hasAny = (r) => r && (r.sleepH != null || r.hrv != null);
 
+// Body Battery, sono, passos e estresse vêm primeiro em toda grade em que aparecem.
 function layout(page, ctx, acts) {
   const m = (id, o) => C.metricCard(id, ctx, o);
   switch (page) {
     case "vitais":
-      return [m("hrv"), m("rhr", { hi: true }), m("resp"), C.spo2Card(),
+      return [m("stress"), m("hrv"), m("rhr"), C.spo2Card(),
         C.hrCard(ctx, { span: "span2" }), C.hrvNightCard(ctx, "span2"),
-        m("stress"), m("intensity"), C.zonesCard(), C.fitnessCard()];
+        m("resp"), m("intensity"), C.zonesCard(), C.fitnessCard()];
     case "corpo":
-      return [m("battery", { hi: true }), C.weightCard(ctx), C.fitnessCard(), C.zonesCard(),
+      return [m("battery"), m("sleep"), m("steps"), C.weightCard(ctx),
         C.bbCurveCard(ctx, "span3"), m("floors"),
-        m("steps"), C.caloriesCard(ctx), C.waterCard(), m("sleep")];
+        C.fitnessCard(), C.zonesCard(), C.caloriesCard(ctx), C.waterCard()];
     case "nutricao":
-      return [C.caloriesCard(ctx, { span: "span2" }), C.foodCard(ctx, "span2"),
-        C.waterCard(), C.weightCard(ctx), m("steps"), m("intensity")];
+      return [m("steps"), C.caloriesCard(ctx, { span: "c5" }), C.foodCard(ctx, "c4"),
+        C.waterCard("c4"), C.weightCard(ctx, { span: "c4" }), m("intensity", { span: "c4" })];
     default:
-      return [m("battery", { hi: true }), m("hrv"), m("rhr"), C.calendarCard(ctx, acts),
-        m("sleep", { hi: true }), m("intensity"), C.hrCard(ctx),
-        m("steps"), m("stress"), m("resp"), C.caloriesCard(ctx),
-        C.weightCard(ctx), C.fitnessCard(), C.zonesCard(), C.waterCard()];
+      return [C.gaugeCard(ctx, { span: "rows2" }), m("sleep"), m("steps"), m("stress"),
+        C.balanceCard(ctx, { span: "c5" }), C.hrCard(ctx, { span: "c4" }),
+        m("hrv"), m("rhr"), m("battery"), m("intensity"),
+        m("resp"), m("calories"), C.weightCard(ctx), C.fitnessCard(),
+        C.calendarCard(ctx, acts, { span: "c4" }), C.zonesCard("c4"), C.waterCard("c4")];
   }
+}
+
+const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; };
+
+function datePill(ctx) {
+  const prev = addDays(ctx.sel, -1), next = addDays(ctx.sel, 1);
+  return `<div class="hero-r"><div class="datepill">
+      <button class="step" type="button" data-go="${ctx.url(prev)}" data-replace aria-label="Dia anterior">${icon("chevLeft")}</button>
+      <span class="when">${esc(ctx.isToday ? "Hoje" : fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" }))}</span>
+      <button class="step" type="button" ${next <= ctx.today ? `data-go="${ctx.url(next)}" data-replace` : "disabled"} aria-label="Próximo dia">${icon("chevRight")}</button>
+    </div>${ctx.isToday ? "" : `<a class="pilllink" href="${ctx.url(ctx.today)}" data-replace>Voltar para hoje</a>`}</div>`;
+}
+
+function hero(ctx, chosen) {
+  const title = ctx.isToday || !chosen ? greeting() : cap(fmtDay(ctx.sel, { weekday: "long", day: "numeric", month: "long" }));
+  return `<section class="hero"><div><h1>${esc(title)}</h1><p class="insight">${C.insightText(ctx)}</p></div>${datePill(ctx)}</section>`;
 }
 
 function dayBar(page, ctx) {
   const p = PAGES[page];
-  const prev = addDays(ctx.sel, -1), next = addDays(ctx.sel, 1);
-  return `<div class="page-head">
-    <div><h1>${esc(p.title)}</h1><p class="muted">${esc(p.about)}</p></div>
-    <div class="daynav">
-      <button class="step" type="button" data-go="${ctx.url(prev)}" data-replace aria-label="Dia anterior">${icon("chevLeft")}</button>
-      <span class="when">${esc(ctx.isToday ? "Hoje" : fmtDay(ctx.sel, { weekday: "long", day: "numeric", month: "long" }))}</span>
-      <button class="step" type="button" ${next <= ctx.today ? `data-go="${ctx.url(next)}" data-replace` : "disabled"} aria-label="Próximo dia">${icon("chevRight")}</button>
-      ${ctx.isToday ? "" : `<a class="link" href="${ctx.url(ctx.today)}" data-replace>Hoje</a>`}
-    </div></div>`;
+  return `<div class="page-head"><div><h1>${esc(p.title)}</h1><p class="muted">${esc(p.about)}</p></div>${datePill(ctx)}</div>`;
 }
 
 export async function renderHub(root, route, alive, page = "home") {
@@ -78,6 +88,7 @@ export async function renderHub(root, route, alive, page = "home") {
   const ctx = {
     sel, today: now, isToday: sel === now, byDate, firstDate: ov.start,
     win: fillDays(ov.days, addDays(sel, -13), sel),
+    all: fillDays(ov.days, addDays(sel, -29), sel),
     url: (d) => (d === now ? base : `${base}?d=${d}`),
     week: acts ? totals(between(acts, addDays(now, -6), now)) : null,
   };
@@ -90,13 +101,14 @@ export async function renderHub(root, route, alive, page = "home") {
     tail = `${C.weekCard(ctx)}
       <section class="section span4"><div class="section-head"><div><h2>Treinos</h2><p>${yt.count} treinos e ${duration(yt.seconds)} nos últimos 12 meses. Clique em um dia para abrir o treino.</p></div><a class="link" href="#/treinos">Todos os treinos ${icon("arrowRight")}</a></div>
         ${heatmap({ from, to: now, cells: trainingCells(acts, from, now) })}</section>
-      <section class="section span4"><div class="section-head"><div><h2>Últimos treinos</h2></div><a class="link" href="#/treinos">Ver todos ${icon("arrowRight")}</a></div>
-        <ul class="list">${acts.slice(0, 5).map((a) => `<li><a href="#/treino/${a.id}"><span class="list-main"><b>${esc(a.name || typeName(a.type))}</b><span class="muted">${esc(typeName(a.type))}, ${esc(fmtDay(a.start))}</span></span><span class="num">${a.km ? `${num(a.km, 1)} km` : duration(a.durationS)}</span></a></li>`).join("")}</ul></section>`;
+      <section class="section span4"><div class="section-head"><div><h2>Atividades recentes</h2><p>Os últimos treinos registrados pelo relógio.</p></div><a class="link" href="#/treinos">Ver todos ${icon("arrowRight")}</a></div>
+        <div class="table-wrap"><table class="tbl"><thead><tr><th>Atividade</th><th>Data</th><th>Hora</th><th class="r">Distância</th><th class="r">Duração</th><th class="r">FC média</th><th class="r">Efeito</th></tr></thead>
+        <tbody>${acts.slice(0, 6).map((a) => `<tr data-go="#/treino/${a.id}"><td><b>${esc(a.name || typeName(a.type))}</b> <span class="muted">${esc(typeName(a.type))}</span></td><td>${esc(fmtDay(a.start))}</td><td class="num muted">${esc(a.start.slice(11, 16))}</td><td class="r num">${a.km ? `${num(a.km, 1)} km` : "—"}</td><td class="r num">${duration(a.durationS)}</td><td class="r num">${a.avgHR ? `${num(a.avgHR)} bpm` : "—"}</td><td class="r">${a.te != null ? `<span class="badge"><i></i>${num(a.te, 1)}</span>` : "—"}</td></tr>`).join("")}</tbody></table></div></section>`;
   } else {
     tail = C.weekCard(ctx);
   }
 
-  root.innerHTML = `${page === "home" ? "" : dayBar(page, ctx)}<div class="bento">${cards.join("")}${tail}</div>`;
+  root.innerHTML = `${page === "home" ? hero(ctx, !!wanted) : dayBar(page, ctx)}<div class="bento">${cards.join("")}${tail}</div>`;
   root.querySelectorAll(".bento > article, .bento > section").forEach((el, i) => { el.classList.add("rise"); el.style.setProperty("--i", i); });
   scrollHeatToEnd(root);
 
@@ -110,7 +122,7 @@ export async function renderHub(root, route, alive, page = "home") {
   if (dayNames.length) {
     loadDay(sel).then((day) => {
       if (!alive()) return;
-      el("hr").forEach((n) => C.fillHr(n, day, ctx, n.classList.contains("span2")));
+      el("hr").forEach((n) => C.fillHr(n, day, ctx));
       el("food").forEach((n) => C.fillFood(n, day));
       el("foodlog").forEach((n) => C.fillFoodLog(n, day, ctx));
       el("spo2").forEach((n) => C.fillSpo2(n, day, ctx));

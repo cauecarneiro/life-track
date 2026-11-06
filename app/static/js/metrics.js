@@ -30,7 +30,7 @@ const group = (title, parts) => {
 
 export const METRICS = {
   battery: {
-    id: "battery", label: "Body Battery", key: "bbMax", unit: "", better: "up", kind: "bars", max: 100,
+    id: "battery", icon: "battery", label: "Body Battery", key: "bbMax", unit: "", better: "up", kind: "bars", max: 100,
     sub: "Pico do dia",
     about: "Nível de energia estimado pela Garmin, de 0 a 100. Aqui, o ponto mais alto de cada dia.",
     fmt: (v) => num(v),
@@ -49,7 +49,7 @@ export const METRICS = {
   },
 
   hrv: {
-    id: "hrv", label: "HRV", key: "hrv", unit: "ms", better: "up", kind: "line",
+    id: "hrv", icon: "pulse", label: "HRV", key: "hrv", unit: "ms", better: "up", kind: "line",
     sub: "Média da noite",
     about: "Variabilidade da frequência cardíaca durante a noite, comparada com a sua faixa equilibrada.",
     fmt: (v) => num(v),
@@ -67,7 +67,7 @@ export const METRICS = {
   },
 
   rhr: {
-    id: "rhr", label: "FC repouso", key: "restingHR", unit: "bpm", better: "down", kind: "line",
+    id: "rhr", icon: "heart", label: "FC repouso", key: "restingHR", unit: "bpm", better: "down", kind: "line",
     sub: "Hoje",
     about: "Frequência cardíaca em repouso. Valores mais baixos costumam indicar melhor recuperação.",
     fmt: (v) => num(v),
@@ -84,7 +84,7 @@ export const METRICS = {
   },
 
   sleep: {
-    id: "sleep", label: "Sono", key: "sleepH", unit: "", better: "up", kind: "bars",
+    id: "sleep", icon: "moon", label: "Sono", key: "sleepH", unit: "", better: "up", kind: "bars",
     sub: "Noite passada",
     about: "Duração da noite, fases do sono e a nota calculada pela Garmin.",
     fmt: sleepTime,
@@ -108,7 +108,7 @@ export const METRICS = {
       const out = [group("Fases do sono", [["Profundo", r.deepMin, "var(--s-deep)"], ["REM", r.remMin, "var(--s-rem)"], ["Leve", r.lightMin, "var(--s-light)"], ["Acordado", r.awakeMin, "var(--s-awake)"]])];
       const sub = r.sleepSub || {};
       const names = { totalDuration: "Duração", stress: "Estresse", awakeCount: "Despertares", remPercentage: "REM", lightPercentage: "Sono leve", deepPercentage: "Sono profundo", restlessness: "Agitação" };
-      const items = Object.entries(names).filter(([k]) => sub[k]?.q).map(([k, label]) => ({ label, value: QUALITY_FILL[sub[k].q] || 0, total: 1, color: "var(--text)", text: QUALITY[sub[k].q] || sub[k].q.toLowerCase() }));
+      const items = Object.entries(names).filter(([k]) => sub[k]?.q).map(([k, label]) => ({ label, value: QUALITY_FILL[sub[k].q] || 0, total: 1, color: "var(--accent)", text: QUALITY[sub[k].q] || sub[k].q.toLowerCase() }));
       if (items.length) out.push({ title: "Como a Garmin avaliou cada parte", items });
       return out;
     },
@@ -116,7 +116,7 @@ export const METRICS = {
   },
 
   intensity: {
-    id: "intensity", label: "Esforço", key: "intensity", unit: "min", better: "up", kind: "bars",
+    id: "intensity", icon: "bolt", label: "Esforço", key: "intensity", unit: "min", better: "up", kind: "bars",
     sub: "Minutos de intensidade",
     about: "Minutos de atividade moderada ou vigorosa. Os vigorosos contam em dobro para a meta semanal da Garmin.",
     fmt: (v) => num(v),
@@ -132,7 +132,7 @@ export const METRICS = {
   },
 
   hr: {
-    id: "hr", label: "Frequência cardíaca", key: "maxHR", unit: "bpm", kind: "line",
+    id: "hr", icon: "heart", label: "Frequência cardíaca", key: "maxHR", unit: "bpm", kind: "line",
     sub: "Máxima do dia",
     about: "A máxima de cada dia. Abra um dia para ver a curva completa, minuto a minuto, e o tempo em cada zona.",
     fmt: (v) => num(v),
@@ -149,7 +149,7 @@ export const METRICS = {
   },
 
   steps: {
-    id: "steps", label: "Passos", key: "steps", unit: "", better: "up", kind: "bars",
+    id: "steps", icon: "steps", label: "Passos", key: "steps", unit: "", better: "up", kind: "bars",
     sub: "Hoje",
     about: "Passos do dia contra a meta que a Garmin ajusta para você.",
     fmt: (v) => num(v),
@@ -167,7 +167,7 @@ export const METRICS = {
   },
 
   stress: {
-    id: "stress", label: "Estresse", key: "stressAvg", unit: "", better: "down", kind: "bars", max: 100,
+    id: "stress", icon: "wave", label: "Estresse", key: "stressAvg", unit: "", better: "down", kind: "bars", max: 100,
     sub: "Média do dia",
     about: "Nível médio de estresse do dia, de 0 a 100, medido pela variabilidade da frequência cardíaca.",
     fmt: (v) => num(v),
@@ -186,7 +186,7 @@ export const METRICS = {
   },
 
   resp: {
-    id: "resp", label: "Respiração", key: "respiration", unit: "rpm", kind: "line",
+    id: "resp", icon: "wind", label: "Respiração", key: "respiration", unit: "rpm", kind: "line",
     sub: "Média do dia",
     about: "Respirações por minuto ao longo do dia, medidas pelo relógio.",
     fmt: (v) => num(v),
@@ -202,7 +202,7 @@ export const METRICS = {
   },
 
   calories: {
-    id: "calories", label: "Calorias", key: "kcal", unit: "kcal", better: "up", kind: "bars", stacked: true,
+    id: "calories", icon: "flame", label: "Calorias", key: "kcal", unit: "kcal", better: "up", kind: "bars", stacked: true,
     sub: "Gastas no dia",
     about: "Calorias gastas no dia: o que o corpo gasta parado (repouso) mais o que vem do movimento (ativas).",
     fmt: (v) => num(v),
@@ -217,7 +217,7 @@ export const METRICS = {
   },
 
   floors: {
-    id: "floors", label: "Andares", key: "floorsUp", unit: "", better: "up", kind: "bars",
+    id: "floors", icon: "stairs", label: "Andares", key: "floorsUp", unit: "", better: "up", kind: "bars",
     sub: "Subidos no dia",
     about: "Andares subidos, medidos pelo altímetro do relógio. Cada andar equivale a cerca de 3 metros.",
     fmt: (v) => num(v),
@@ -232,7 +232,8 @@ export const METRICS = {
   },
 };
 
-export const ORDER = ["battery", "hrv", "rhr", "sleep", "intensity", "hr", "steps", "stress", "resp", "calories", "floors"];
+// Body Battery, sono, passos e estresse sempre vêm primeiro em qualquer lista ou grade.
+export const ORDER = ["battery", "sleep", "steps", "stress", "hrv", "rhr", "intensity", "hr", "resp", "calories", "floors"];
 
 /** Faixa "normal" do dia: a faixa da Garmin para o HRV, média ± desvio da janela para o resto. */
 export function normalRange(m, windowRows, row) {

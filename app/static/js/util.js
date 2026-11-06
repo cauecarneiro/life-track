@@ -91,6 +91,17 @@ const PATHS = {
   fork: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2.5 5-2.5 8H17v10"/>',
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   dumbbell: '<path d="M6 7v10M3.5 9.5v5M18 7v10M20.5 9.5v5M6 12h12"/>',
+  steps: '<path d="M4 17c2.5-.8 3.5-3 3.5-6V6a2.2 2.2 0 0 1 4.4 0v4c0 3 1.2 5 4.6 6.2V20H4z"/>',
+  battery: '<rect x="2" y="7" width="17" height="10" rx="3"/><path d="M22 10.5v3M6 10.5v3M10 10.5v3"/>',
+  flame: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/>',
+  scale: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9.5a4 4 0 0 1 6 0M12 9.5l1.6 2"/>',
+  droplet: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  wind: '<path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>',
+  bolt: '<path d="M13 3 5 13h6l-1 8 8-10h-6z"/>',
+  stairs: '<path d="M3 20h5v-4h4v-4h4V8h5"/>',
+  hourglass: '<path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+  wave: '<path d="M3 12c2 0 2-6 4.5-6S10 18 12 18s2.5-12 4.5-12S19 12 21 12"/>',
   heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
 };
 export const icon = (name, cls = "") =>
