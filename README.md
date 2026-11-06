@@ -19,7 +19,7 @@ Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fon
 - Um resumo do dia em texto, escrito a partir dos seus números, e o seletor de dia (clique na data para abrir um calendário).
 - Um aviso quando o relógio não sincroniza há mais de um dia.
 - "Editar" escolhe quais cartões aparecem; a escolha fica salva no navegador.
-- Cartões do mesmo tamanho, nesta ordem: Body Battery, sono, passos, estresse, calorias, equilíbrio, frequência cardíaca (batimentos do dia inteiro), HRV, FC de repouso, esforço, respiração, peso, idade física, zonas de FC, hidratação e calendário.
+- Cartões do mesmo tamanho, nesta ordem: Body Battery, sono, passos, estresse, calorias, equilíbrio, frequência cardíaca (batimentos do dia inteiro), HRV, FC de repouso, esforço, respiração, peso, idade física, zonas de FC e oxigênio (os três últimos e a idade física começam desligados; ligue em "Editar").
 - "Sua semana" com os indicadores principais lado a lado, o mapa de calor de treinos e as atividades recentes.
 
 **Cada indicador** abre com o **dia escolhido no topo** (valor grande, todos os detalhes e, no sono, as fases e as notas), depois a **semana** com um gráfico próprio para cada dado, e só então as médias da semana:
@@ -33,7 +33,7 @@ Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fon
 
 Abaixo, a lista dia a dia (no sono: deitou, acordou, duração, nota e fases) e o dia escolhido em detalhe, com a curva do dia quando existe. As setas trocam de semana; o controle no topo troca para 30 dias, 90 dias ou 6 meses, com gráfico, estatísticas e a tabela completa. O mapa de calor do ano aparece nas duas visões.
 
-**Categorias**: cada uma lista os seus indicadores com o valor do dia e os últimos 7 dias, e traz os cartões de detalhe: a curva da Body Battery (Recuperação), a FC do dia e o HRV da noite (Coração), peso, idade física e água (Corpo), treinos recentes (Atividade).
+**Categorias**: cada uma lista os seus indicadores com o valor do dia e os últimos 7 dias, e traz os cartões de detalhe: a curva da Body Battery (Recuperação), a FC do dia e o HRV da noite (Coração), peso e idade física (Corpo), treinos recentes (Atividade).
 
 **Teclado**: ← e → trocam de dia na página de um indicador, Shift+← e Shift+→ trocam de semana, ⌘K abre a busca e "Pular para o conteúdo" é o primeiro item do Tab. O estudo de usabilidade e acessibilidade está em [docs/estudo-ux.md](docs/estudo-ux.md).
 
@@ -43,7 +43,7 @@ O dia de hoje ainda está em andamento: passos, calorias, estresse, andares e es
 
 ### O que depende do seu relógio e da sua conta
 
-O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se você os registrar: **oxigênio (SpO2)** exige o Pulse Ox ligado no relógio (pode ser só durante o sono); **peso** é registrado no Garmin Connect (Mais › Estatísticas de saúde › Peso) e **água** no relógio, pelo widget de hidratação. O Life Track só lê. Quando não há registro, o cartão diz isso. O diário alimentar da Garmin é pago (Connect+), por isso o painel não o usa. O formato da hidratação foi implementado sem dados reais para conferir.
+O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se você os registrar: **oxigênio (SpO2)** exige o Pulse Ox ligado no relógio (pode ser só durante o sono); **peso** é registrado no Garmin Connect (Mais › Estatísticas de saúde › Peso). O Life Track só lê. Quando não há registro, o cartão diz isso. Alimentação (diário pago da Garmin, o Connect+) e hidratação (o Forerunner 165 não grava água na conta) ficam de fora.
 
 ## Como funciona
 
@@ -159,7 +159,7 @@ Detalhes e fontes em [docs/pesquisa-de-apis.md](docs/pesquisa-de-apis.md).
 
 - [x] Garmin: sono, HRV, repouso, Body Battery, estresse, passos
 - [x] Garmin: treinos com mapa, ritmo, FC, zonas, altimetria, cadência, potência e voltas
-- [x] Garmin: FC ao longo do dia, Body Battery e HRV da noite, respiração, calorias, andares, zonas, idade física, peso, SpO2, hidratação (quando registrada)
+- [x] Garmin: FC ao longo do dia, Body Battery e HRV da noite, respiração, calorias, andares, zonas, idade física, peso e SpO2 (quando registrados)
 - [ ] Tema claro
 - [ ] Oura Ring
 - [ ] WHOOP
@@ -204,8 +204,8 @@ Rotas do servidor:
 | Rota | O que devolve |
 |---|---|
 | `GET /api/overview?days=30` | Um registro por dia: sono (com notas), HRV, FC, Body Battery, estresse, passos, andares, calorias, respiração, intensidade |
-| `GET /api/day/{AAAA-MM-DD}` | Curva de FC, Body Battery e HRV da noite, SpO2, alimentação e água de um dia |
-| `GET /api/profile` | Zonas de FC, idade física, peso e hidratação |
+| `GET /api/day/{AAAA-MM-DD}` | Curva de FC, Body Battery e HRV da noite e SpO2 de um dia |
+| `GET /api/profile` | Zonas de FC, idade física e peso |
 | `GET /api/activities?days=365` | Lista de treinos |
 | `GET /api/activities/{id}` | Pontos do percurso, voltas e dinâmica de um treino, lidos do arquivo FIT |
 | `POST /api/refresh` | Limpa o cache em memória |

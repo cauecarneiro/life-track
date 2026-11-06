@@ -179,7 +179,7 @@ const INDEX = [
   ...Object.entries(CATEGORIES).map(([id, c]) => [c.title, `#/c/${id}`, "Categoria", c.about]),
   ["Treinos", "#/treinos", "Registros", "corrida caminhada trilha atividades"],
   ["Peso", "#/c/corpo", "Corpo", "imc gordura"], ["Idade física", "#/c/corpo", "Corpo", ""], ["Zonas de FC", "#/c/coracao", "Coração", ""],
-  ["Água", "#/c/corpo", "Corpo", "hidratação beber"], ["Oxigênio (SpO2)", "#/c/coracao", "Coração", "pulse ox"],
+  ["Oxigênio (SpO2)", "#/c/coracao", "Coração", "pulse ox"],
   ["Minutos de intensidade", "#/m/intensity", "Indicador", "esforço pontos"],
 ];
 let active = 0;

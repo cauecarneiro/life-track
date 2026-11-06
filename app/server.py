@@ -444,7 +444,6 @@ def build_day(day: date) -> dict:
             "bb": pool.submit(safe, garmin.call, "get_daily_body_battery", day, day),
             "hrv": pool.submit(safe, garmin.call, "get_daily_hrv", day),
             "spo2": pool.submit(safe, garmin.call, "get_daily_spo2", day),
-            "water": pool.submit(safe, garmin.call, "get_daily_hydration", day, day),
         }
         r = {k: v.result() for k, v in f.items()}
 
@@ -478,7 +477,6 @@ def build_day(day: date) -> dict:
         if x[1] is not None
     ]
 
-    water = r["water"] if isinstance(r["water"], list) else []
     return {
         "date": day.isoformat(),
         "hr": {
@@ -510,7 +508,6 @@ def build_day(day: date) -> dict:
             "sleepAvg": sp.get("avgSleepSpO2"),
             "hourly": spo2_hourly,
         },
-        "water": water,
     }
 
 
@@ -525,7 +522,6 @@ def build_profile() -> dict:
             "age": pool.submit(safe, garmin.call, "get_fitness_age", today - timedelta(days=1)),
             "weight": pool.submit(safe, garmin.call, "get_weight_measurements", today - timedelta(days=365), today),
             "goals": pool.submit(safe, garmin.call, "get_effective_weight_goals", today - timedelta(days=365), today),
-            "water": pool.submit(safe, garmin.call, "get_daily_hydration", today - timedelta(days=29), today),
         }
         r = {k: v.result() for k, v in f.items()}
 
@@ -572,7 +568,6 @@ def build_profile() -> dict:
         else None,
         "weights": weights,
         "weightGoals": len(get(r["goals"], "userGoals") or []),
-        "water": r["water"] if isinstance(r["water"], list) else [],
     }
 
 

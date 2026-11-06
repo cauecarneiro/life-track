@@ -15,8 +15,8 @@ export const CATEGORIES = {
     cards: (ctx) => ["steps", "calories", "intensity", "floors"].map((id) => C.metricCard(id, ctx)), workouts: true },
   coracao: { title: "Coração", icon: "heart", about: "Frequência cardíaca, variabilidade, oxigênio e zonas.", metrics: ["hr", "rhr", "hrv"],
     cards: (ctx) => [C.hrCard(ctx, { span: "span2" }), C.hrvNightCard(ctx, "span2"), C.metricCard("rhr", ctx), C.metricCard("hrv", ctx), C.zonesCard(), C.spo2Card()] },
-  corpo: { title: "Corpo", icon: "body", about: "Peso, idade física e hidratação.", metrics: [],
-    cards: (ctx) => [C.weightCard(ctx, { span: "c4" }), C.fitnessCard("c4"), C.waterCard("c4")] },
+  corpo: { title: "Corpo", icon: "body", about: "Peso e idade física.", metrics: [],
+    cards: (ctx) => [C.weightCard(ctx, { span: "span2" }), C.fitnessCard("span2")] },
 };
 export const LEGACY = { vitais: "coracao", nutricao: "corpo" };
 
@@ -24,18 +24,18 @@ export const LEGACY = { vitais: "coracao", nutricao: "corpo" };
 const HOME = [
   ["battery", "Body Battery"], ["sleep", "Sono"], ["steps", "Passos"], ["stress", "Estresse"], ["calories", "Calorias"],
   ["balance", "Equilíbrio"], ["hr", "Frequência cardíaca"], ["hrv", "HRV"], ["rhr", "FC de repouso"], ["intensity", "Intensidade"],
-  ["resp", "Respiração"], ["weight", "Peso"], ["fitness", "Idade física"], ["zones", "Zonas de FC"], ["water", "Hidratação"], ["spo2", "Oxigênio (SpO2)"],
+  ["resp", "Respiração"], ["weight", "Peso"], ["fitness", "Idade física"], ["zones", "Zonas de FC"], ["spo2", "Oxigênio (SpO2)"],
 ];
-const DEFAULT_HIDDEN = ["fitness", "zones", "water", "spo2"];
+const DEFAULT_HIDDEN = ["fitness", "zones", "spo2"];
 const STORE = "lifetrack.hidden";
 function hiddenCards() {
   try { const v = JSON.parse(localStorage.getItem(STORE)); return Array.isArray(v) ? v : DEFAULT_HIDDEN; } catch { return DEFAULT_HIDDEN; }
 }
 function saveHidden(list) { try { localStorage.setItem(STORE, JSON.stringify(list)); } catch { /* sem armazenamento: vale só nesta visita */ } }
-const homeCard = (id, ctx) => ({ hr: () => C.hrCard(ctx), weight: () => C.weightCard(ctx), fitness: () => C.fitnessCard(), zones: () => C.zonesCard(), water: () => C.waterCard(), spo2: () => C.spo2Card() }[id] || (() => C.metricCard(id, ctx)))();
+const homeCard = (id, ctx) => ({ hr: () => C.hrCard(ctx), weight: () => C.weightCard(ctx), fitness: () => C.fitnessCard(), zones: () => C.zonesCard(), spo2: () => C.spo2Card() }[id] || (() => C.metricCard(id, ctx)))();
 
 const DAY_FILL = ["hr", "spo2", "bbcurve", "hrvnight"];
-const PROFILE_FILL = ["weight", "fitness", "zones", "water"];
+const PROFILE_FILL = ["weight", "fitness", "zones"];
 const hasAny = (r) => r && (r.sleepH != null || r.hrv != null);
 
 function datePill(ctx, base) {
@@ -152,7 +152,6 @@ export async function renderHub(root, route, alive, page = "home") {
       el("weight").forEach((n) => C.fillWeight(n, p, ctx));
       el("fitness").forEach((n) => C.fillFitness(n, p));
       el("zones").forEach((n) => C.fillZones(n, p));
-      el("water").forEach((n) => C.fillWater(n, p, ctx));
     }).catch(fail(profNames));
   }
 }

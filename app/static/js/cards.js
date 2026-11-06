@@ -326,24 +326,6 @@ export function fillZones(el, profile) {
   el.innerHTML = `${head("Zonas de FC", { ic: "target" })}<p class="sub" style="margin-top:14px">Em bpm, por ${esc(ZONE_METHOD[z.method] || "método personalizado")}. Máxima ${num(top)}, repouso ${num(z.resting)}.</p><div class="bars" style="margin-top:8px">${rows}</div>`;
 }
 
-export function waterCard(span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" aria-label="Hidratação" data-fill="water">${head("Hidratação", { ic: "droplet", go: false })}<div class="skel"></div></article>`;
-}
-
-export function fillWater(el, profile, ctx) {
-  const list = profile?.water || [];
-  const e = list.find((x) => (x.calendarDate || x.date) === ctx.sel);
-  const ml = e?.valueInML ?? e?.intakeInML ?? null;
-  if (ml == null) {
-    el.innerHTML = `${head("Hidratação", { ic: "droplet", go: false })}<div class="val"><b>—</b></div><p class="sub">${list.length ? "Nada registrado neste dia" : "Nenhum registro nos últimos 30 dias"}</p>
-      <p class="empty-note">No relógio, aperte ↑ ou ↓ no mostrador até a tela de hidratação e START para registrar. O total do dia aparece aqui depois de sincronizar.</p>`;
-    return;
-  }
-  const goal = e.goalInML;
-  el.innerHTML = `${head("Hidratação", { ic: "droplet", go: false })}<div class="val"><b class="num">${num(ml / 1000, 1)}</b><small>litros</small></div><p class="sub">${goal ? `meta ${num(goal / 1000, 1)} L` : ""}</p>
-    ${goal ? `<span class="prog"><i style="width:${Math.min(100, (ml / goal) * 100)}%"></i></span>` : ""}`;
-}
-
 export function spo2Card(span = "") {
   return `<article class="card${span ? ` ${span}` : ""}" aria-label="Oxigênio no sangue" data-fill="spo2">${head("Oxigênio (SpO2)", { ic: "droplet", go: false })}<div class="skel"></div></article>`;
 }

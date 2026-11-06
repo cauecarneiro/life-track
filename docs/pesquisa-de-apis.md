@@ -51,7 +51,8 @@ Limitações conhecidas:
 | Resumo diário (FC de repouso, passos, Body Battery, estresse, calorias) | `daily-summaries` | Sim |
 | FC ao longo do dia | `heart-rate` | Ainda não |
 | Zonas de FC, idade fitness | `heart-rate-zones`, `fitness-age` | Ainda não |
-| SpO2, peso, hidratação, alimentação | `spo2`, `weight-measurements`, `hydration`, `food-logs` | Ainda não |
+| SpO2 e peso | `spo2`, `weight-measurements` | Sim (quando registrados) |
+| Hidratação e alimentação | `hydration`, `food-logs` | Não: o relógio não grava água na conta e o diário alimentar é pago (Connect+) |
 
 SpO2 e peso podem vir vazios se o recurso estiver desligado no relógio ou se nada tiver sido registrado.
 
