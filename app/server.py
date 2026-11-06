@@ -410,7 +410,7 @@ def parse_fit(zip_bytes: bytes) -> dict:
 app = FastAPI(title="Life Track")
 
 # Hospedado, o painel exige senha (APP_PASSWORD). Sem a variável, fica aberto, como no uso local.
-APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "").strip()
 _failures: dict[str, deque[float]] = {}
 
 
