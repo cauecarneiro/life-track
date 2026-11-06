@@ -1,5 +1,6 @@
 # Plano grátis do Render: o serviço dorme após 15 min sem uso e acorda na próxima visita.
-# A chave da Garmin e a senha do painel ficam só no painel do Render (sync: false), nunca no Git.
+# A chave da Garmin fica só no painel do Render (sync: false), nunca no Git.
+# Sem APP_PASSWORD o painel abre sem senha. Para proteger de novo, crie essa variável no Render.
 services:
   - type: web
     name: life-track
@@ -11,6 +12,4 @@ services:
     autoDeployTrigger: commit
     envVars:
       - key: GARMIN_PERSONAL_API_KEY
-        sync: false
-      - key: APP_PASSWORD
         sync: false
