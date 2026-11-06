@@ -115,8 +115,8 @@ export async function renderWorkout(root, { id }, alive) {
     const map = L.map("map", { scrollWheelZoom: false });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap", className: "tiles-dark" }).addTo(map);
     const path = L.polyline(line, { color: "#ffffff", weight: 3 }).addTo(map);
-    L.circleMarker(line[0], { radius: 6, color: "#000", weight: 2, fillColor: "#ff9f0a", fillOpacity: 1 }).bindTooltip("Início").addTo(map);
-    L.circleMarker(line[line.length - 1], { radius: 6, color: "#ff9f0a", weight: 2, fillColor: "#000", fillOpacity: 1 }).bindTooltip("Fim").addTo(map);
+    L.circleMarker(line[0], { radius: 6, color: "#000", weight: 2, fillColor: "#0a84ff", fillOpacity: 1 }).bindTooltip("Início").addTo(map);
+    L.circleMarker(line[line.length - 1], { radius: 6, color: "#0a84ff", weight: 2, fillColor: "#000", fillOpacity: 1 }).bindTooltip("Fim").addTo(map);
     map.fitBounds(path.getBounds(), { padding: [24, 24] });
     onCleanup(() => map.remove());
   }

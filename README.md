@@ -13,7 +13,7 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral com as seções (vira barra de abas no celular), busca por qualquer dado e microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
+Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque azul, usado só no que está selecionado ou é o dia atual. Barra lateral com as seções (vira barra de abas no celular), busca por qualquer dado e microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
 
 **Resumo (página inicial)**
 - Um resumo do dia em texto, escrito a partir dos seus números, e o seletor de dia.
