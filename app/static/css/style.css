@@ -1,5 +1,5 @@
 /* Life Track: modo escuro no estilo Apple. Preto de fundo, cartões #1C1C1E, textos em branco e cinza,
-   um único destaque verde-azulado (o tom do Perplexity) só para o que está selecionado ou é o dia atual. */
+   um único destaque laranja (systemOrange) só para o que está selecionado ou é o dia atual. */
 
 :root {
   --bg: #000000;
@@ -17,7 +17,7 @@
   --fill2: rgba(120, 120, 128, 0.24);
   --fill3: rgba(120, 120, 128, 0.16);
   --bar: rgba(235, 235, 245, 0.3);
-  --accent: #2aadbb;
+  --accent: #ff9f0a;
   --good: #30d158;
   --bad: #ff453a;
 
@@ -61,7 +61,7 @@ p { text-wrap: pretty; }
 ul { list-style: none; }
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
-:focus-visible { outline: 3px solid rgba(42, 173, 187, 0.6); outline-offset: 2px; border-radius: 10px; }
+:focus-visible { outline: 3px solid rgba(255, 159, 10, 0.55); outline-offset: 2px; border-radius: 10px; }
 .ic { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .ic.fill { fill: currentColor; stroke: none; }
 
