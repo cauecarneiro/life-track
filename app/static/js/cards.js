@@ -1,6 +1,6 @@
 // Cartões da tela inicial e das páginas de resumo. Cada um mostra um dado, o dia escolhido e a tendência recente.
-import { METRICS, QUALITY } from "./metrics.js?v=4";
-import { esc, num, avg, fmtDay, addDays, minutesText, sleepTime, hhmm, cap, icon, parseDay, typeName, duration } from "./util.js?v=4";
+import { METRICS, QUALITY } from "./metrics.js?v=5";
+import { esc, num, avg, fmtDay, addDays, minutesText, sleepTime, hhmm, cap, icon, parseDay, typeName, duration } from "./util.js?v=5";
 
 const has = (v) => v != null && !Number.isNaN(v);
 const WEEKDAY = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -15,18 +15,19 @@ export function valueOf(m, row) {
   return has(live) ? { v: live, partial: true } : { v: null };
 }
 
-const when = (ctx, partial) => (ctx.isToday ? (partial ? "Hoje, até agora" : "Hoje") : cap(fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" })));
+const when = (ctx, partial) => (partial ? "Até agora" : "");
 
 function head(title, { chip = "", go = true, ic = "pulse" } = {}) {
-  return `<header class="card-h">${icon(ic)}<h3>${esc(title)}</h3>${chip}${go ? `<span class="go">${icon("chevRight")}</span>` : ""}</header>`;
+  return `<header class="card-h">${icon(ic)}<h2>${esc(title)}</h2>${chip}${go ? `<span class="go">${icon("chevRight")}</span>` : ""}</header>`;
 }
 
 function chipFor(v, mean) {
   if (!has(v) || !has(mean) || mean === 0) return "";
   const p = ((v - mean) / Math.abs(mean)) * 100;
-  if (Math.abs(p) < 2) return '<span class="chip">Estável</span>';
+  const t = 'title="Comparado com a média dos 14 dias anteriores"';
+  if (Math.abs(p) < 2) return `<span class="chip" ${t}>Estável</span>`;
   const d = Math.abs(p) < 10 ? 1 : 0;
-  return `<span class="chip">${icon(p > 0 ? "arrowUp" : "arrowDown")}${num(Math.abs(p), d)}%</span>`;
+  return `<span class="chip" ${t}><span class="sr">${p > 0 ? "acima" : "abaixo"} da média, </span>${icon(p > 0 ? "arrowUp" : "arrowDown")}${num(Math.abs(p), d)}%</span>`;
 }
 
 const axis = (ctx) => `<div class="axis"><span>${esc(fmtDay(ctx.win[0].date))}</span><span>${ctx.isToday ? "Hoje" : esc(fmtDay(ctx.sel))}</span></div>`;
@@ -109,7 +110,7 @@ export function metricCard(id, ctx, opts = {}) {
   if (!has(v)) {
     body = `<div class="val"><b>—</b></div><p class="sub">Sem dado neste dia.</p>`;
   } else {
-    const sub = `<p class="sub">${esc(id === "sleep" || id === "hrv" ? m.sub : when(ctx, partial))}${hint ? ` · ${esc(hint)}` : ""}</p>`;
+    const sub = `<p class="sub">${esc([id === "sleep" || id === "hrv" ? m.sub : when(ctx, partial), hint].filter(Boolean).join(" · "))}</p>`;
     const counts = id !== "sleep" && Number.isInteger(v);
     const value = `<div class="val"><b class="num"${counts ? ` data-count="${v}"` : ""}>${m.fmt(v)}</b>${m.unit ? `<small>${m.unit}</small>` : ""}</div>`;
     if (id === "steps") {
@@ -122,7 +123,7 @@ export function metricCard(id, ctx, opts = {}) {
       body = `${value}${sub}${id === "sleep" ? stageExtra(last) : ""}${m.kind === "line" ? lineViz(m, vals, mean, ctx) : barsViz(m, vals, mean, ctx)}`;
     }
   }
-  return `<article class="${cls}" data-go="#/m/${id}" tabindex="0" role="link" aria-label="${esc(m.label)}">${head(m.label, { ic: m.icon, chip: has(v) ? chipFor(v, mean) : "" })}${body}</article>`;
+  return `<a class="${cls}" href="#/m/${id}" aria-label="${esc(`${m.label}: ${has(v) ? `${m.fmt(v)}${m.unit ? ` ${m.unit}` : ""}` : "sem dado"}`)}">${head(m.label, { ic: m.icon, chip: has(v) && !partial ? chipFor(v, mean) : "" })}${body}</a>`;
 }
 
 function stressCard(ctx, opts = {}) {
@@ -136,13 +137,13 @@ function stressCard(ctx, opts = {}) {
     return `<div class="col${i === days.length - 1 ? " on" : ""}" data-tip="${esc(`${fmtDay(r.date)}: alto por ${minutesText(s.high)}`)}">${segs}</div>`;
   }).join("");
   const hasDist = days.some((r) => r.stressMin);
-  return `<article class="card${opts.span ? ` ${opts.span}` : ""}" data-go="#/m/stress" tabindex="0" role="link" aria-label="Estresse">
-    ${head("Estresse", { ic: "wave", chip: has(v) ? chipFor(v, mean) : "" })}
+  return `<a class="card${opts.span ? ` ${opts.span}` : ""}" href="#/m/stress" aria-label="Estresse">
+    ${head("Estresse", { ic: "wave", chip: has(v) && !partial ? chipFor(v, mean) : "" })}
     <div class="val"><b class="num">${has(v) ? num(v) : "—"}</b><small>média</small></div>
-    <p class="sub">${esc(when(ctx, partial))}${has(v) && last.stressMin?.high != null ? ` · alto por ${minutesText((last.stressMin || {}).high)}` : ""}</p>
+    <p class="sub">${esc([when(ctx, partial), has(v) && last.stressMin?.high != null ? `alto por ${minutesText(last.stressMin.high)}` : ""].filter(Boolean).join(" · "))}</p>
     ${hasDist ? `<div class="viz"><div class="sblocks">${cols}</div><div class="sblocks-l">${letters(days)}</div>
       <div class="legend">${SEG.map(([, c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join("")}</div></div>` : ""}
-  </article>`;
+  </a>`;
 }
 
 // ---------------------------------------------------------------- batimentos do dia (onda) e curvas
@@ -165,8 +166,8 @@ export function curveHtml(points, { lo, hi, xMax = 1440, tall = false } = {}) {
 }
 
 export function hrCard(ctx, { span = "" } = {}) {
-  return `<article class="card${span ? ` ${span}` : ""}" data-go="#/m/hr" tabindex="0" role="link" aria-label="Frequência cardíaca" data-fill="hr">
-    ${head("Frequência cardíaca", { ic: "heart" })}<div class="skel"></div></article>`;
+  return `<a class="card${span ? ` ${span}` : ""}" href="#/m/hr" aria-label="Frequência cardíaca" data-fill="hr">
+    ${head("Frequência cardíaca", { ic: "heart" })}<div class="skel"></div></a>`;
 }
 
 export function fillHr(el, day, ctx) {
@@ -241,7 +242,7 @@ export function calendarCard(ctx, acts, { span = "" } = {}) {
 
 const WEEK_ROWS = [
   ["battery", "Body Battery", ""], ["sleep", "Sono", ""], ["steps", "Passos", ""], ["stress", "Estresse", ""],
-  ["hrv", "HRV", "ms"], ["rhr", "FC repouso", "bpm"], ["intensity", "Esforço", "min"],
+  ["hrv", "HRV", "ms"], ["rhr", "FC repouso", "bpm"], ["intensity", "Intensidade", "min"],
 ];
 
 export function weekCard(ctx) {
@@ -274,7 +275,7 @@ export function caloriesCard(ctx, { span = "" } = {}) {
   const { v, partial } = valueOf(m, last);
   const live = { ...last, ...(last.live || {}) };
   const share = has(v) && v ? Math.min(100, ((live.kcalActive || 0) / v) * 100) : 0;
-  return `<article class="card${span ? ` ${span}` : ""}" data-go="#/m/calories" tabindex="0" role="link" aria-label="Calorias" data-fill="food">
+  return `<a class="card${span ? ` ${span}` : ""}" href="#/m/calories" aria-label="Calorias" data-fill="food">
     ${head("Calorias", { ic: "flame" })}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
       <div><span class="muted">Consumidas</span><div class="val" style="margin-top:6px"><b class="num" data-eaten style="font-size:34px">—</b><small>kcal</small></div></div>
@@ -283,7 +284,7 @@ export function caloriesCard(ctx, { span = "" } = {}) {
     <span class="prog" aria-hidden="true"><i style="width:${share}%"></i></span>
     <div class="rows"><div class="r"><span>Em repouso</span><b class="num">${has(live.kcalRest) ? `${num(live.kcalRest)} kcal` : "—"}</b></div><div class="r"><span>Ativas</span><b class="num">${has(live.kcalActive) ? `${num(live.kcalActive)} kcal` : "—"}</b></div></div>
     <p class="note" data-foodnote>Consumo vem do diário alimentar do Garmin Connect.</p>
-  </article>`;
+  </a>`;
 }
 
 export function fillFood(el, day) {
@@ -295,7 +296,7 @@ export function fillFood(el, day) {
 }
 
 export function weightCard(ctx, { span = "" } = {}) {
-  return `<article class="card${span ? ` ${span}` : ""}" data-go="#/corpo" tabindex="0" role="link" aria-label="Peso" data-fill="weight">${head("Peso", { ic: "scale" })}<div class="skel"></div></article>`;
+  return `<a class="card${span ? ` ${span}` : ""}" href="#/c/corpo" aria-label="Peso" data-fill="weight">${head("Peso", { ic: "scale" })}<div class="skel"></div></a>`;
 }
 
 export function fillWeight(el, profile, ctx) {
@@ -316,7 +317,7 @@ export function fillWeight(el, profile, ctx) {
 }
 
 export function fitnessCard(span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" data-go="#/corpo" tabindex="0" role="link" aria-label="Idade física" data-fill="fitness">${head("Idade física", { ic: "hourglass" })}<div class="skel"></div></article>`;
+  return `<a class="card${span ? ` ${span}` : ""}" href="#/c/corpo" aria-label="Idade física" data-fill="fitness">${head("Idade física", { ic: "hourglass" })}<div class="skel"></div></a>`;
 }
 
 export function fillFitness(el, profile) {
@@ -334,7 +335,7 @@ export function fillFitness(el, profile) {
 }
 
 export function zonesCard(span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" data-go="#/m/hr" tabindex="0" role="link" aria-label="Zonas de frequência cardíaca" data-fill="zones">${head("Zonas de FC", { ic: "target" })}<div class="skel"></div></article>`;
+  return `<a class="card${span ? ` ${span}` : ""}" href="#/c/coracao" aria-label="Zonas de frequência cardíaca" data-fill="zones">${head("Zonas de FC", { ic: "target" })}<div class="skel"></div></a>`;
 }
 
 const ZONE_METHOD = { HR_MAX: "porcentagem da FC máxima", HRR: "reserva de FC", LTHR: "limiar de lactato" };
@@ -353,7 +354,7 @@ export function fillZones(el, profile) {
 }
 
 export function waterCard(span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" tabindex="0" aria-label="Hidratação" data-fill="water">${head("Hidratação", { ic: "droplet", go: false })}<div class="skel"></div></article>`;
+  return `<article class="card${span ? ` ${span}` : ""}" aria-label="Hidratação" data-fill="water">${head("Hidratação", { ic: "droplet", go: false })}<div class="skel"></div></article>`;
 }
 
 export function fillWater(el, profile, ctx) {
@@ -371,7 +372,7 @@ export function fillWater(el, profile, ctx) {
 }
 
 export function spo2Card(span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" tabindex="0" aria-label="Oxigênio no sangue" data-fill="spo2">${head("Oxigênio (SpO2)", { ic: "droplet", go: false })}<div class="skel"></div></article>`;
+  return `<article class="card${span ? ` ${span}` : ""}" aria-label="Oxigênio no sangue" data-fill="spo2">${head("Oxigênio (SpO2)", { ic: "droplet", go: false })}<div class="skel"></div></article>`;
 }
 
 export function fillSpo2(el, day) {
@@ -406,7 +407,7 @@ export function fillBbCurve(el, day) {
 }
 
 export function hrvNightCard(ctx, span = "") {
-  return `<article class="card${span ? ` ${span}` : ""}" data-go="#/m/hrv" tabindex="0" role="link" aria-label="HRV da noite" data-fill="hrvnight">${head("HRV durante a noite", { ic: "pulse" })}<div class="skel"></div></article>`;
+  return `<a class="card${span ? ` ${span}` : ""}" href="#/m/hrv" aria-label="HRV da noite" data-fill="hrvnight">${head("HRV durante a noite", { ic: "pulse" })}<div class="skel"></div></a>`;
 }
 
 export function fillHrvNight(el, day) {
@@ -442,3 +443,25 @@ export function fillFoodLog(el, day) {
 
 export const qualityText = (q) => QUALITY[q] || q;
 export { sleepTime };
+
+// ---------------------------------------------------------------- lista de indicadores de uma categoria
+
+export function metricList(ids, ctx) {
+  const rows = ids.map((id) => {
+    const m = METRICS[id];
+    const last = ctx.win[ctx.win.length - 1];
+    const { v, partial } = valueOf(m, last);
+    const week = ctx.win.slice(-7).map((r, i, a) => (i === a.length - 1 ? v : r[m.key] ?? null));
+    const max = Math.max(m.max || 0, ...week.filter(has), 1);
+    const spark = week.map((x, i) => `<i class="${i === week.length - 1 ? "on" : ""}" style="height:${has(x) ? Math.max(8, (x / max) * 100) : 4}%"></i>`).join("");
+    const hint = has(v) ? m.hint(partial ? { ...last, ...last.live } : last) : "";
+    return `<a class="mrow" href="#/m/${id}">
+      ${icon(m.icon)}
+      <span class="mrow-t"><b>${esc(m.label)}</b><span>${esc(has(v) ? [partial ? "Até agora" : "", hint].filter(Boolean).join(" · ") : "Sem dado neste dia")}</span></span>
+      <span class="spark7" aria-hidden="true">${spark}</span>
+      <span class="mrow-v num">${has(v) ? `${m.fmt(v)}${m.unit ? ` <small>${m.unit}</small>` : ""}` : "—"}</span>
+      ${icon("chevRight", "mrow-go")}
+    </a>`;
+  }).join("");
+  return `<section class="section span4 mlist" aria-label="Indicadores">${rows}</section>`;
+}

@@ -1,8 +1,9 @@
 // Um treino: números, percurso, gráficos ao longo da distância, zonas e voltas.
-import { loadActivities, loadFit, hasFit } from "../api.js?v=4";
-import { mount, baseOptions, onCleanup, css } from "../charts.js?v=4";
-import { loadingHtml, barsHtml } from "../ui.js?v=4";
-import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js?v=4";
+import { loadActivities, loadFit, hasFit } from "../api.js?v=5";
+import { back } from "../nav.js?v=5";
+import { mount, baseOptions, onCleanup, css } from "../charts.js?v=5";
+import { loadingHtml, barsHtml } from "../ui.js?v=5";
+import { esc, num, avg, duration, minutesText, pace, fmtDay, typeName, signed, RUNS, icon } from "../util.js?v=5";
 
 const TE_LABEL = {
   RECOVERY: "recuperação", AEROBIC_BASE: "base aeróbica", TEMPO: "ritmo", LACTATE_THRESHOLD: "limiar",
@@ -79,7 +80,7 @@ export async function renderWorkout(root, { id }, alive) {
   const where = hasDist ? "Ao longo da distância, em quilômetros." : "Ao longo do tempo.";
 
   root.innerHTML = `
-    <a class="crumb" href="#/treinos">${icon("chevLeft")} Treinos</a>
+    <a class="crumb" href="${back.label === "Treinos" ? back.href : "#/treinos"}">${icon("chevLeft")} Treinos</a>
     <div class="page-head"><div>
       <h1>${esc(a.name || typeName(a.type) || "Treino")}</h1>
       <p class="muted">${esc(typeName(a.type))}${a.start ? `, ${esc(fmtDay(a.start, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))} às ${esc(a.start.slice(11, 16))}` : ""}${a.location ? `, ${esc(a.location)}` : ""}</p>
@@ -88,7 +89,7 @@ export async function renderWorkout(root, { id }, alive) {
     <section class="kpis kpis-4">${kpis}</section>
     ${more.length ? `<section class="section"><div class="section-head"><div><h2>Mais números</h2><p>Tudo o que a Garmin registrou deste treino.</p></div></div>
       <dl class="facts">${more.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd></div>`).join("")}</dl></section>` : ""}
-    ${hasGps ? '<div id="map" role="img" aria-label="Mapa do percurso"></div>' : ""}
+    ${hasGps ? '<div id="map" role="region" aria-label="Mapa do percurso"></div>' : ""}
     ${plot("c-pace", isRun ? "Ritmo" : "Velocidade", `${where} Quanto mais alto no gráfico, mais rápido.`)}
     ${plot("c-hr", "Frequência cardíaca", where, true)}
     ${hasAlt && hasGps ? plot("c-alt", "Altimetria", "Altitude em metros.", true) : ""}

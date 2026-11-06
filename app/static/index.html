@@ -7,15 +7,17 @@
   <meta name="theme-color" content="#000000">
   <title>Life Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
+  <button class="skip" type="button">Pular para o conteúdo</button>
   <aside class="side">
     <a class="brand" href="#/">Life Track</a>
     <div class="search" role="search">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Buscar" autocomplete="off" spellcheck="false" aria-label="Buscar um dado, como sono, HRV ou peso">
-      <ul id="found" class="found" hidden></ul>
+      <input id="q" type="search" placeholder="Buscar" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="found" aria-autocomplete="list" aria-label="Buscar um dado, como sono, HRV ou peso">
+      <kbd aria-hidden="true">⌘K</kbd>
+      <ul id="found" class="found" role="listbox" aria-label="Resultados" hidden></ul>
     </div>
     <nav class="nav" id="nav" aria-label="Seções"></nav>
     <div class="side-foot">
@@ -23,15 +25,17 @@
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
         Atualizar dados
       </button>
+      <p id="stamp"></p>
       <p>Lido direto da API da Garmin. Nada fica salvo.</p>
     </div>
   </aside>
 
   <main id="view" tabindex="-1"></main>
   <div id="tip" class="tip" role="tooltip" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script type="module" src="js/main.js?v=4"></script>
+  <script type="module" src="js/main.js?v=5"></script>
 </body>
 </html>

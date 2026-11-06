@@ -18,3 +18,6 @@ export function parseRoute() {
     q: Object.fromEntries(new URLSearchParams(qs)),
   };
 }
+
+/** Para onde o "voltar" da página de um indicador leva: a última página de resumo, categoria ou treinos visitada. */
+export const back = { href: "#/", label: "Resumo" };

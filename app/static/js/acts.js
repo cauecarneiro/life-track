@@ -1,6 +1,6 @@
 // Agregações de treinos usadas na home e na página de treinos.
-import { levelize } from "./heatmap.js?v=4";
-import { addDays, fmtDay, minutesText, typeName, num } from "./util.js?v=4";
+import { levelize } from "./heatmap.js?v=5";
+import { addDays, fmtDay, minutesText, typeName, num } from "./util.js?v=5";
 
 /** Células do mapa de calor: minutos de treino por dia, com link para o treino mais longo do dia. */
 export function trainingCells(acts, from, to) {

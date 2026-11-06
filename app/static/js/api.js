@@ -1,4 +1,4 @@
-import { addBalance } from "./metrics.js?v=4";
+import { addBalance } from "./metrics.js?v=5";
 
 // Acesso ao servidor local, com cache em memória no navegador.
 

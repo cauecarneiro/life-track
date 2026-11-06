@@ -1,5 +1,5 @@
 // Definição dos indicadores: o que cada um mede, como formatar e o que mostrar do dia.
-import { num, sd, avg, sleepTime, minutesText, signed } from "./util.js?v=4";
+import { num, sd, avg, sleepTime, minutesText, signed } from "./util.js?v=5";
 
 export const QUALITY = { EXCELLENT: "excelente", GOOD: "boa", FAIR: "razoável", POOR: "ruim" };
 const QUALITY_FILL = { EXCELLENT: 1, GOOD: 0.75, FAIR: 0.5, POOR: 0.25 };
@@ -116,7 +116,7 @@ export const METRICS = {
   },
 
   intensity: {
-    id: "intensity", icon: "bolt", label: "Esforço", key: "intensity", unit: "min", better: "up", kind: "bars",
+    id: "intensity", icon: "bolt", label: "Intensidade", key: "intensity", unit: "min", better: "up", kind: "bars",
     sub: "Minutos de intensidade",
     about: "Minutos de atividade moderada ou vigorosa. Os vigorosos contam em dobro para a meta semanal da Garmin.",
     fmt: (v) => num(v),

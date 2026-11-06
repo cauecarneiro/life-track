@@ -1,86 +1,92 @@
-// Páginas de resumo (início, sinais vitais, corpo, nutrição): cartões do dia escolhido.
-// O dia vem de ?d=AAAA-MM-DD. Dados que exigem outra chamada (curva do dia, perfil) entram depois, sem travar a tela.
-import { loadOverview, loadActivities, loadDay, loadProfile, hasOverview, hasActivities } from "../api.js?v=4";
-import * as C from "../cards.js?v=4";
-import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=4";
-import { trainingCells, totals, between } from "../acts.js?v=4";
-import { loadingHtml, fillDays, settle } from "../ui.js?v=4";
-import { esc, num, fmtDay, today, addDays, diffDays, duration, typeName, icon, cap } from "../util.js?v=4";
+// Resumo e páginas de categoria. O dia vem de ?d=AAAA-MM-DD.
+// Dados que exigem outra chamada (curva do dia, perfil) entram depois, sem travar a tela.
+import { loadOverview, loadActivities, loadDay, loadProfile, hasOverview, hasActivities } from "../api.js?v=5";
+import * as C from "../cards.js?v=5";
+import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=5";
+import { trainingCells, totals, between } from "../acts.js?v=5";
+import { fillDays, settle, skeletonHtml } from "../ui.js?v=5";
+import { esc, num, fmtDay, today, addDays, diffDays, duration, typeName, icon, cap } from "../util.js?v=5";
 
-const PAGES = {
-  home: { base: "#/", title: null },
-  vitais: { base: "#/vitais", title: "Sinais vitais", about: "Coração, respiração, oxigênio e estresse, do dia escolhido." },
-  corpo: { base: "#/corpo", title: "Corpo", about: "Energia, peso, idade física e zonas de frequência cardíaca." },
-  nutricao: { base: "#/nutricao", title: "Nutrição", about: "Calorias gastas e consumidas, hidratação e diário alimentar." },
+// Categorias, na ordem da barra lateral. Body Battery e estresse (Recuperação), sono e passos (Atividade) vêm primeiro.
+export const CATEGORIES = {
+  recuperacao: { title: "Recuperação", icon: "battery", about: "Energia, estresse e quanto do seu corpo está no normal.", metrics: ["battery", "stress", "balance", "resp"],
+    cards: (ctx) => [C.bbCurveCard(ctx, "span2"), C.metricCard("stress", ctx), C.metricCard("balance", ctx)] },
+  atividade: { title: "Atividade", icon: "steps", about: "Passos, calorias, minutos de intensidade e andares.", metrics: ["steps", "calories", "intensity", "floors"],
+    cards: (ctx) => ["steps", "calories", "intensity", "floors"].map((id) => C.metricCard(id, ctx)), workouts: true },
+  coracao: { title: "Coração", icon: "heart", about: "Frequência cardíaca, variabilidade, oxigênio e zonas.", metrics: ["hr", "rhr", "hrv"],
+    cards: (ctx) => [C.hrCard(ctx, { span: "span2" }), C.hrvNightCard(ctx, "span2"), C.metricCard("rhr", ctx), C.metricCard("hrv", ctx), C.zonesCard(), C.spo2Card()] },
+  corpo: { title: "Corpo", icon: "body", about: "Peso, composição corporal e idade física.", metrics: [],
+    cards: (ctx) => [C.weightCard(ctx, { span: "span2" }), C.fitnessCard("span2")] },
+  nutricao: { title: "Nutrição", icon: "fork", about: "Calorias gastas e consumidas, água e diário alimentar.", metrics: ["calories"],
+    cards: (ctx) => [C.caloriesCard(ctx, { span: "span2" }), C.foodCard(ctx, "span2"), C.waterCard("span2"), C.metricCard("calories", ctx, { span: "span2" })] },
 };
+export const LEGACY = { vitais: "coracao" };
 
-const DAY_FILL = { hr: "hr", food: "food", foodlog: "foodlog", spo2: "spo2", bbcurve: "bbcurve", hrvnight: "hrvnight" };
+// Cartões que podem ficar no resumo, na ordem em que aparecem. Quem escolhe quais aparecem é você ("Editar").
+const HOME = [
+  ["battery", "Body Battery"], ["sleep", "Sono"], ["steps", "Passos"], ["stress", "Estresse"], ["calories", "Calorias"],
+  ["balance", "Equilíbrio"], ["hr", "Frequência cardíaca"], ["hrv", "HRV"], ["rhr", "FC de repouso"], ["intensity", "Intensidade"],
+  ["resp", "Respiração"], ["weight", "Peso"], ["fitness", "Idade física"], ["zones", "Zonas de FC"], ["water", "Hidratação"], ["spo2", "Oxigênio (SpO2)"],
+];
+const DEFAULT_HIDDEN = ["fitness", "zones", "water", "spo2"];
+const STORE = "lifetrack.hidden";
+function hiddenCards() {
+  try { const v = JSON.parse(localStorage.getItem(STORE)); return Array.isArray(v) ? v : DEFAULT_HIDDEN; } catch { return DEFAULT_HIDDEN; }
+}
+function saveHidden(list) { try { localStorage.setItem(STORE, JSON.stringify(list)); } catch { /* sem armazenamento: vale só nesta visita */ } }
+const homeCard = (id, ctx) => ({ hr: () => C.hrCard(ctx), weight: () => C.weightCard(ctx), fitness: () => C.fitnessCard(), zones: () => C.zonesCard(), water: () => C.waterCard(), spo2: () => C.spo2Card() }[id] || (() => C.metricCard(id, ctx)))();
+
+const DAY_FILL = ["hr", "food", "foodlog", "spo2", "bbcurve", "hrvnight"];
 const PROFILE_FILL = ["weight", "fitness", "zones", "water"];
-
-// O dia só vale como padrão quando a noite já sincronizou; senão a home abriria vazia.
 const hasAny = (r) => r && (r.sleepH != null || r.hrv != null);
 
-// Body Battery, sono, passos e estresse vêm primeiro em toda grade em que aparecem; calorias logo depois.
-function layout(page, ctx, acts) {
-  const m = (id, o) => C.metricCard(id, ctx, o);
-  switch (page) {
-    case "vitais":
-      return [m("stress"), m("hrv"), m("rhr"), C.spo2Card(),
-        C.hrCard(ctx, { span: "span2" }), C.hrvNightCard(ctx, "span2"),
-        m("resp"), m("balance"), C.zonesCard(), C.fitnessCard()];
-    case "corpo":
-      return [m("battery"), m("sleep"), m("steps"), C.weightCard(ctx),
-        C.bbCurveCard(ctx, "span3"), m("floors"),
-        C.fitnessCard(), C.zonesCard(), m("calories"), C.waterCard()];
-    case "nutricao":
-      return [m("steps"), m("calories"), C.caloriesCard(ctx, { span: "span2" }),
-        C.foodCard(ctx, "span2"), C.waterCard(), C.weightCard(ctx)];
-    default:
-      return [m("battery"), m("sleep"), m("steps"), m("stress"),
-        m("calories"), m("balance"), C.hrCard(ctx), m("hrv"),
-        m("rhr"), m("intensity"), m("resp"), C.weightCard(ctx),
-        C.fitnessCard(), C.zonesCard(), C.waterCard(), C.calendarCard(ctx, acts)];
-  }
-}
-
-function datePill(ctx) {
+function datePill(ctx, base) {
   const prev = addDays(ctx.sel, -1), next = addDays(ctx.sel, 1);
   return `<div class="head-r">${ctx.isToday ? "" : `<a class="btn" href="${ctx.url(ctx.today)}" data-replace>Hoje</a>`}<div class="stepper">
       <button class="step" type="button" data-go="${ctx.url(prev)}" data-replace aria-label="Dia anterior">${icon("chevLeft")}</button>
-      <span class="when">${esc(ctx.isToday ? "Hoje" : fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" }))}</span>
+      <button class="when pickable" type="button" data-pick aria-label="Escolher o dia, agora ${esc(fmtDay(ctx.sel, { day: "numeric", month: "long" }))}">${esc(ctx.isToday ? "Hoje" : fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" }))}</button>
+      <input class="pick" type="date" tabindex="-1" aria-hidden="true" data-base="${base}" data-today="${ctx.today}" min="${ctx.firstDate}" max="${ctx.today}" value="${ctx.sel}">
       <button class="step" type="button" ${next <= ctx.today ? `data-go="${ctx.url(next)}" data-replace` : "disabled"} aria-label="Próximo dia">${icon("chevRight")}</button>
     </div></div>`;
 }
 
-function hero(ctx) {
-  return `<header class="page-head"><div><h1>Resumo</h1><p class="muted">${esc(cap(fmtDay(ctx.sel, { weekday: "long", day: "numeric", month: "long" })))}</p><p class="insight">${C.insightText(ctx)}</p></div>${datePill(ctx)}</header>`;
+/** Aviso quando o relógio não sincroniza há mais de um dia: os números da tela são de antes. */
+function staleNotice(ctx, latest) {
+  if (!latest || diffDays(ctx.today, latest) < 2) return "";
+  return `<div class="notice" role="status">${icon("refresh")}<p>Os dados mais recentes são de <b>${esc(fmtDay(latest, { weekday: "long", day: "numeric", month: "long" }))}</b>. Abra o app Garmin Connect no celular, com o relógio por perto, para sincronizar. Depois toque em atualizar.</p><button class="btn" type="button" data-refresh>Atualizar dados</button></div>`;
 }
 
-function dayBar(page, ctx) {
-  const p = PAGES[page];
-  return `<div class="page-head"><div><h1>${esc(p.title)}</h1><p class="muted">${esc(p.about)}</p></div>${datePill(ctx)}</div>`;
+function editSheet(hidden) {
+  return `<dialog class="sheet" id="edit" aria-labelledby="edit-t">
+    <form method="dialog">
+      <header><h2 id="edit-t">Editar resumo</h2><button class="btn" value="ok">OK</button></header>
+      <p class="muted">Escolha quais cartões aparecem no resumo. Os outros continuam nas categorias.</p>
+      <ul>${HOME.map(([id, label]) => `<li><label><span>${esc(label)}</span><input type="checkbox" role="switch" name="${id}"${hidden.includes(id) ? "" : " checked"}></label></li>`).join("")}</ul>
+    </form>
+  </dialog>`;
+}
+
+function workoutsTable(acts) {
+  return `<section class="section span4"><div class="section-head"><div><h2>Atividades recentes</h2><p>Os últimos treinos registrados pelo relógio.</p></div><a class="link" href="#/treinos">Ver todos ${icon("arrowRight")}</a></div>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Atividade</th><th>Data</th><th>Hora</th><th class="r">Distância</th><th class="r">Duração</th><th class="r">FC média</th><th class="r">Efeito aeróbico</th></tr></thead>
+    <tbody>${acts.slice(0, 6).map((a) => `<tr data-go="#/treino/${a.id}"><td><a href="#/treino/${a.id}"><b>${esc(a.name || typeName(a.type))}</b></a> <span class="muted">${esc(typeName(a.type))}</span></td><td>${esc(fmtDay(a.start))}</td><td class="num muted">${esc(a.start.slice(11, 16))}</td><td class="r num">${a.km ? `${num(a.km, 1)} km` : "—"}</td><td class="r num">${duration(a.durationS)}</td><td class="r num">${a.avgHR ? `${num(a.avgHR)} bpm` : "—"}</td><td class="r">${a.te != null ? `<span class="badge">${num(a.te, 1)}</span>` : "—"}</td></tr>`).join("")}</tbody></table></div></section>`;
 }
 
 export async function renderHub(root, route, alive, page = "home") {
+  const cat = CATEGORIES[page];
   const now = today();
   const wanted = /^\d{4}-\d{2}-\d{2}$/.test(route.q.d || "") && route.q.d <= now ? route.q.d : null;
   const span = wanted && diffDays(now, wanted) > 25 ? 365 : 30;
-  const homeNeeds = page === "home";
-  if (!hasOverview(span) || (homeNeeds && !hasActivities())) root.innerHTML = loadingHtml("Buscando seus dados na Garmin");
-  const [ov, acts] = await Promise.all([loadOverview(span), homeNeeds ? loadActivities() : null]);
+  const needActs = page === "home" || cat?.workouts;
+  if (!hasOverview(span) || (needActs && !hasActivities())) root.innerHTML = skeletonHtml(page === "home" ? 8 : 4);
+  const [ov, acts] = await Promise.all([loadOverview(span), needActs ? loadActivities() : null]);
   if (!alive()) return;
   loadOverview(365).catch(() => {}); // aquece o cache para abrir os indicadores rápido
 
   const byDate = new Map(ov.days.map((d) => [d.date, d]));
-  let sel = wanted;
-  if (!sel) {
-    sel = now;
-    if (!hasAny(byDate.get(now))) {
-      const last = [...ov.days].reverse().find(hasAny);
-      if (last) sel = last.date;
-    }
-  }
-  const base = PAGES[page].base;
+  const latest = [...ov.days].reverse().find(hasAny)?.date;
+  const sel = wanted || (hasAny(byDate.get(now)) ? now : latest || now);
+  const base = page === "home" ? "#/" : `#/c/${page}`;
   const ctx = {
     sel, today: now, isToday: sel === now, byDate, firstDate: ov.start,
     win: fillDays(ov.days, addDays(sel, -13), sel),
@@ -88,27 +94,44 @@ export async function renderHub(root, route, alive, page = "home") {
     url: (d) => (d === now ? base : `${base}?d=${d}`),
     week: acts ? totals(between(acts, addDays(now, -6), now)) : null,
   };
+  const dateLine = cap(fmtDay(sel, { weekday: "long", day: "numeric", month: "long" }));
 
-  const cards = layout(page, ctx, acts);
-  let tail = "";
+  let html;
   if (page === "home") {
+    const hidden = hiddenCards();
     const from = addDays(now, -364);
     const yt = totals(between(acts, from, now));
-    tail = `${C.weekCard(ctx)}
-      <section class="section span4"><div class="section-head"><div><h2>Treinos</h2><p>${yt.count} treinos e ${duration(yt.seconds)} nos últimos 12 meses. Clique em um dia para abrir o treino.</p></div><a class="link" href="#/treinos">Todos os treinos ${icon("arrowRight")}</a></div>
-        ${heatmap({ from, to: now, cells: trainingCells(acts, from, now) })}</section>
-      <section class="section span4"><div class="section-head"><div><h2>Atividades recentes</h2><p>Os últimos treinos registrados pelo relógio.</p></div><a class="link" href="#/treinos">Ver todos ${icon("arrowRight")}</a></div>
-        <div class="table-wrap"><table class="tbl"><thead><tr><th>Atividade</th><th>Data</th><th>Hora</th><th class="r">Distância</th><th class="r">Duração</th><th class="r">FC média</th><th class="r">Efeito</th></tr></thead>
-        <tbody>${acts.slice(0, 6).map((a) => `<tr data-go="#/treino/${a.id}"><td><b>${esc(a.name || typeName(a.type))}</b> <span class="muted">${esc(typeName(a.type))}</span></td><td>${esc(fmtDay(a.start))}</td><td class="num muted">${esc(a.start.slice(11, 16))}</td><td class="r num">${a.km ? `${num(a.km, 1)} km` : "—"}</td><td class="r num">${duration(a.durationS)}</td><td class="r num">${a.avgHR ? `${num(a.avgHR)} bpm` : "—"}</td><td class="r">${a.te != null ? `<span class="badge"><i></i>${num(a.te, 1)}</span>` : "—"}</td></tr>`).join("")}</tbody></table></div></section>`;
+    html = `<header class="page-head"><div><h1>Resumo</h1><p class="muted">${esc(dateLine)}</p><p class="insight">${C.insightText(ctx)}</p></div>
+        <div class="head-r"><button class="btn" type="button" data-edit>Editar</button>${datePill(ctx, base)}</div></header>
+      ${staleNotice(ctx, latest)}
+      <div class="bento">${HOME.filter(([id]) => !hidden.includes(id)).map(([id]) => homeCard(id, ctx)).join("")}
+        ${C.weekCard(ctx)}
+        <section class="section span4"><div class="section-head"><div><h2>Treinos</h2><p>${yt.count} treinos e ${duration(yt.seconds)} nos últimos 12 meses. Clique em um dia para abrir o treino.</p></div><a class="link" href="#/treinos">Todos os treinos ${icon("arrowRight")}</a></div>
+          ${heatmap({ from, to: now, cells: trainingCells(acts, from, now) })}</section>
+        ${workoutsTable(acts)}
+      </div>${editSheet(hidden)}`;
   } else {
-    tail = C.weekCard(ctx);
+    html = `<header class="page-head"><div><h1>${esc(cat.title)}</h1><p class="muted">${esc(cat.about)}</p></div>${datePill(ctx, base)}</header>
+      ${staleNotice(ctx, latest)}
+      <div class="bento">${cat.metrics.length ? C.metricList(cat.metrics, ctx) : ""}${cat.cards(ctx).join("")}${cat.workouts ? workoutsTable(acts) : ""}</div>`;
   }
 
-  root.innerHTML = `${page === "home" ? hero(ctx) : dayBar(page, ctx)}<div class="bento">${cards.join("")}${tail}</div>`;
+  root.innerHTML = html;
   root.classList.remove("static");
-  root.querySelectorAll(".bento > article, .bento > section").forEach((el, i) => { el.classList.add("rise"); el.style.setProperty("--i", Math.min(i, 12)); });
+  root.querySelectorAll(".bento > *").forEach((el, i) => { el.classList.add("rise"); el.style.setProperty("--i", Math.min(i, 12)); });
   scrollHeatToEnd(root);
   settle(root);
+
+  // "Editar": ao fechar a folha, grava a escolha e redesenha o resumo.
+  const sheet = root.querySelector("#edit");
+  if (sheet) {
+    root.querySelector("[data-edit]").addEventListener("click", () => sheet.showModal());
+    sheet.addEventListener("close", () => {
+      const off = HOME.map(([id]) => id).filter((id) => !sheet.querySelector(`[name="${id}"]`).checked);
+      saveHidden(off);
+      window.dispatchEvent(new Event("app:route"));
+    });
+  }
 
   // Preenchimento tardio: cada cartão troca o esqueleto pelo dado quando ele chega.
   const el = (name) => [...root.querySelectorAll(`[data-fill="${name}"]`)];
@@ -116,7 +139,7 @@ export async function renderHub(root, route, alive, page = "home") {
     if (!alive()) return;
     names.flatMap(el).forEach((n) => { n.querySelector(".skel")?.replaceWith(Object.assign(document.createElement("p"), { className: "note", textContent: `Não foi possível carregar: ${e.message}` })); });
   };
-  const dayNames = Object.keys(DAY_FILL).filter((n) => el(n).length);
+  const dayNames = DAY_FILL.filter((n) => el(n).length);
   if (dayNames.length) {
     loadDay(sel).then((day) => {
       if (!alive()) return;

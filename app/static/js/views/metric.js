@@ -1,12 +1,12 @@
 // Indicador: um dia em destaque, outros dias no gráfico, no mapa de calor e na tabela.
-import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js?v=4";
-import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js?v=4";
-import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js?v=4";
-import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js?v=4";
-import { loadingHtml, emptyHtml, fillDays, barsHtml, segmented, settle } from "../ui.js?v=4";
-import { weekHtml } from "../week.js?v=4";
-import { go } from "../nav.js?v=4";
-import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js?v=4";
+import { loadOverview, loadDay, loadProfile, hasOverview } from "../api.js?v=5";
+import { METRICS, normalRange, statusOf, toneOf, STATUS_TEXT } from "../metrics.js?v=5";
+import { mount, baseOptions, legendTop, dayTitle, css } from "../charts.js?v=5";
+import { heatmap, levelize, scrollHeatToEnd } from "../heatmap.js?v=5";
+import { loadingHtml, emptyHtml, fillDays, barsHtml, segmented, settle } from "../ui.js?v=5";
+import { weekHtml } from "../week.js?v=5";
+import { go, back } from "../nav.js?v=5";
+import { esc, num, avg, fmtDay, addDays, minutesText, hhmm, icon } from "../util.js?v=5";
 
 const RANGES = [[7, "Semana"], [30, "30 dias"], [90, "90 dias"], [180, "6 meses"]];
 let lastKey = "";
@@ -222,7 +222,8 @@ function dayPanel(m, id, row, sel, r, rows, dates) {
   const prevDay = dates[idx - 1], nextDay = dates[idx + 1];
   const groups = m.groups ? m.groups(row) : [];
   const note = m.note ? m.note(row) : "";
-  return `<section class="day">
+  return `<section class="day" aria-labelledby="day-t">
+      <h2 class="sr" id="day-t">Detalhes do dia</h2>
       <div class="day-main">
         <div class="daynav">
           <button class="step" type="button" ${prevDay ? `data-go="${url(id, prevDay, r)}" data-replace` : "disabled"} aria-label="Dia anterior">${icon("chevLeft")}</button>
@@ -256,7 +257,7 @@ export async function renderMetric(root, { id, q }, alive) {
   const expanded = q.x === "1";
   const byDate = new Map(ov.days.map((d) => [d.date, d]));
   const dates = ov.days.filter((d) => d[m.key] != null).map((d) => d.date);
-  const crumb = `<a class="crumb" href="#/">${icon("chevLeft")} Resumo</a>`;
+  const crumb = `<a class="crumb" href="${back.href}">${icon("chevLeft")} ${esc(back.label)}</a>`;
   if (!dates.length) {
     root.innerHTML = `${crumb}${emptyHtml(`Sem dados de ${m.label.toLowerCase()}`, "Nenhum registro no último ano. Sincronize o relógio com o aplicativo Garmin Connect.")}`;
     return;
@@ -310,7 +311,7 @@ export async function renderMetric(root, { id, q }, alive) {
       },
     };
     const window30 = fillDays(ov.days, addDays(sel, -30), sel);
-    root.innerHTML = `${head}${weekHtml(m, rows, prev, ctx)}${dayPanel(m, id, byDate.get(sel), sel, 7, window30, dates)}${heat}`;
+    root.innerHTML = `${head}${weekHtml(m, rows, prev, ctx, dayPanel(m, id, byDate.get(sel), sel, 7, window30, dates))}${heat}`;
   } else {
     const start = addDays(ov.end, -(r - 1));
     const rows = fillDays(ov.days, start, ov.end);
@@ -345,7 +346,7 @@ export async function renderMetric(root, { id, q }, alive) {
         <div class="table-wrap"><table class="tbl">
           <thead><tr><th>Dia</th><th class="r">${esc(m.label)}</th><th class="r">${esc(c1[0])}</th><th class="r">${esc(c2[0])}</th></tr></thead>
           <tbody>${shown.map((x) => `<tr data-go="${url(id, x.date, r, expanded)}" data-replace aria-selected="${x.date === sel}">
-            <td>${esc(fmtDay(x.date, { weekday: "short", day: "numeric", month: "short" }))}</td>
+            <td><a href="${url(id, x.date, r, expanded)}" data-replace>${esc(fmtDay(x.date, { weekday: "short", day: "numeric", month: "short" }))}</a></td>
             <td class="r num">${withUnit(m, x[m.key])}</td><td class="r num muted">${esc(c1[1](x))}</td><td class="r num muted">${esc(c2[1](x))}</td></tr>`).join("")}</tbody>
         </table></div>
         ${!expanded && list.length > shown.length ? `<p class="more"><a class="link" href="${url(id, sel, r, true)}" data-replace>Mostrar todos os ${list.length} dias</a></p>` : ""}

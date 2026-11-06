@@ -13,10 +13,12 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 
 ## O que o painel mostra
 
-Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral com as seções (vira barra de abas no celular), busca por qualquer dado e microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
+Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral em três grupos, como no app Saúde: Resumo; Categorias (Recuperação, Sono, Atividade, Coração, Corpo, Nutrição); Registros (Treinos). No celular ela vira uma barra de abas. A busca encontra qualquer dado (⌘K de qualquer lugar). Há microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
 
 **Resumo (página inicial)**
-- Um resumo do dia em texto, escrito a partir dos seus números, e o seletor de dia.
+- Um resumo do dia em texto, escrito a partir dos seus números, e o seletor de dia (clique na data para abrir um calendário).
+- Um aviso quando o relógio não sincroniza há mais de um dia.
+- "Editar" escolhe quais cartões aparecem; a escolha fica salva no navegador.
 - Cartões do mesmo tamanho, nesta ordem: Body Battery, sono, passos, estresse, calorias, equilíbrio, frequência cardíaca (batimentos do dia inteiro), HRV, FC de repouso, esforço, respiração, peso, idade física, zonas de FC, hidratação e calendário.
 - "Sua semana" com os indicadores principais lado a lado, o mapa de calor de treinos e as atividades recentes.
 
@@ -31,7 +33,9 @@ Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fon
 
 Abaixo, a lista dia a dia (no sono: deitou, acordou, duração, nota e fases) e o dia escolhido em detalhe, com a curva do dia quando existe. As setas trocam de semana; o controle no topo troca para 30 dias, 90 dias ou 6 meses, com gráfico, estatísticas e a tabela completa. O mapa de calor do ano aparece nas duas visões.
 
-**Sinais vitais, Corpo e Nutrição** agrupam os mesmos cartões por assunto, com a FC do dia, o HRV da noite, a curva da Body Battery com seus eventos, peso, idade física, zonas, calorias, água e diário alimentar.
+**Categorias**: cada uma lista os seus indicadores com o valor do dia e os últimos 7 dias, e traz os cartões de detalhe: a curva da Body Battery (Recuperação), a FC do dia e o HRV da noite (Coração), peso e idade física (Corpo), calorias, água e diário alimentar (Nutrição), treinos recentes (Atividade).
+
+**Teclado**: ← e → trocam de dia na página de um indicador, Shift+← e Shift+→ trocam de semana, ⌘K abre a busca e "Pular para o conteúdo" é o primeiro item do Tab. O estudo de usabilidade e acessibilidade está em [docs/estudo-ux.md](docs/estudo-ux.md).
 
 **Treinos**: totais, filtro por modalidade, mapa de calor, horas por semana e lista completa. Cada treino tem mapa, ritmo, FC, altimetria, cadência e potência (um gráfico para cada), zonas, dinâmica de corrida, voltas e outros números.
 

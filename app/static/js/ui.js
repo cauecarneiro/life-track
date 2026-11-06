@@ -1,7 +1,11 @@
 // Peças de interface compartilhadas entre as telas.
-import { esc, addDays, num } from "./util.js?v=4";
+import { esc, addDays, num } from "./util.js?v=5";
 
 export const loadingHtml = (text) => `<div class="empty"><p class="pulse">${esc(text)}</p></div>`;
+
+/** Esqueleto da página enquanto os dados chegam: o leitor de tela ouve o aviso, a tela mostra a forma do que vem. */
+export const skeletonHtml = (n = 8) => `<div class="page-head" role="status"><div><span class="sk sk-t"></span><span class="sk sk-s"></span><span class="sr">Buscando seus dados na Garmin</span></div></div>
+  <div class="bento">${Array.from({ length: n }, () => '<div class="card sk-card"><span class="sk sk-s"></span><span class="sk sk-v"></span><span class="skel"></span></div>').join("")}</div>`;
 
 export const emptyHtml = (title, text) => `<div class="empty"><h2>${esc(title)}</h2><p>${esc(text)}</p></div>`;
 

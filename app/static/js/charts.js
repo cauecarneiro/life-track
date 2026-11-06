@@ -1,5 +1,5 @@
 // Gráficos (Chart.js) e mini-gráficos (SVG) em tons de cinza.
-import { fmtDay } from "./util.js?v=4";
+import { fmtDay } from "./util.js?v=5";
 
 export const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 

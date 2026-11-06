@@ -1,10 +1,10 @@
 // Treinos: totais, ano de atividade, volume por semana e a lista completa.
-import { loadActivities, hasActivities } from "../api.js?v=4";
-import { mount, baseOptions, css } from "../charts.js?v=4";
-import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=4";
-import { trainingCells, totals, between } from "../acts.js?v=4";
-import { loadingHtml, emptyHtml } from "../ui.js?v=4";
-import { esc, num, sum, duration, pace, fmtDay, today, addDays, parseDay, typeName, RUNS, icon } from "../util.js?v=4";
+import { loadActivities, hasActivities } from "../api.js?v=5";
+import { mount, baseOptions, css } from "../charts.js?v=5";
+import { heatmap, scrollHeatToEnd } from "../heatmap.js?v=5";
+import { trainingCells, totals, between } from "../acts.js?v=5";
+import { loadingHtml, emptyHtml } from "../ui.js?v=5";
+import { esc, num, sum, duration, pace, fmtDay, today, addDays, parseDay, typeName, RUNS, icon } from "../util.js?v=5";
 
 const RANGES = [[30, "30 dias"], [90, "90 dias"], [365, "1 ano"], [3650, "Tudo"]];
 const href = (r, t) => `#/treinos?r=${r}&t=${t}`;
@@ -60,10 +60,10 @@ export async function renderWorkouts(root, { q }, alive) {
     <section class="section">
       <div class="section-head"><div><h2>Todos os treinos</h2><p>${list.length} no período.</p></div></div>
       ${list.length ? `<div class="table-wrap"><table class="tbl">
-        <thead><tr><th>Data</th><th>Treino</th><th>Modalidade</th><th class="r">Distância</th><th class="r">Tempo</th><th class="r">Ritmo</th><th class="r">FC média</th><th class="r">Efeito</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Treino</th><th>Modalidade</th><th class="r">Distância</th><th class="r">Tempo</th><th class="r">Ritmo</th><th class="r">FC média</th><th class="r">Efeito aeróbico</th><th><span class="sr">Abrir</span></th></tr></thead>
         <tbody>${list.map((a) => `<tr data-go="#/treino/${a.id}">
           <td class="muted">${esc(fmtDay(a.start, a.start.slice(0, 4) === to.slice(0, 4) ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" }))}</td>
-          <td><b>${esc(a.name || typeName(a.type))}</b></td>
+          <td><a href="#/treino/${a.id}"><b>${esc(a.name || typeName(a.type))}</b></a></td>
           <td class="muted">${esc(typeName(a.type))}</td>
           <td class="r num">${a.km ? `${num(a.km, 2)} km` : "—"}</td>
           <td class="r num">${duration(a.durationS)}</td>

@@ -1,7 +1,7 @@
 // Visão semanal de um indicador: média da semana, um gráfico com os sete dias e a lista dia a dia.
 // Cada indicador escolhe o gráfico que melhor o explica (horário do sono, barras, faixas, linha, composição).
-import { QUALITY } from "./metrics.js?v=4";
-import { esc, num, avg, sum, fmtDay, addDays, parseDay, minutesText, sleepTime, hhmm, icon } from "./util.js?v=4";
+import { QUALITY } from "./metrics.js?v=5";
+import { esc, num, avg, sum, fmtDay, addDays, parseDay, minutesText, sleepTime, hhmm, icon } from "./util.js?v=5";
 
 const has = (v) => v != null && !Number.isNaN(v);
 const WD = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -100,11 +100,12 @@ const defaultSum = (m) => (rows) => {
 // ---------------------------------------------------------------- gráficos
 
 function columns(rows, ctx, inner) {
+  const m = ctx.metric;
   return rows.map((r, i) => {
     const future = r.date > ctx.today;
     const on = r.date === ctx.sel ? " on" : "";
     const attrs = future ? "disabled" : `data-go="${ctx.url(r.date)}" data-replace`;
-    return `<button type="button" class="wk-col${on}" ${attrs} style="--i:${i}" aria-label="${esc(fmtDay(r.date, { weekday: "long", day: "numeric", month: "long" }))}">${future ? "" : inner(r, i)}</button>`;
+    return `<button type="button" class="wk-col${on}" ${attrs} style="--i:${i}"${on ? ' aria-current="date"' : ""} aria-label="${esc(fmtDay(r.date, { weekday: "long", day: "numeric", month: "long" }))}${has(r[m.key]) ? `: ${m.fmt(r[m.key])}${m.unit ? ` ${m.unit}` : ""}` : future ? "" : ", sem dado"}">${future ? "" : inner(r, i)}</button>`;
   }).join("");
 }
 
@@ -202,7 +203,8 @@ function sleepChart(rows, ctx) {
 // ---------------------------------------------------------------- montagem
 
 /** rows: 7 dias seguidos. prev: os 7 anteriores. ctx: { sel, today, url(d), weekNav: { prev, next } } */
-export function weekHtml(m, rows, prev, ctx) {
+export function weekHtml(m, rows, prev, ctx, middle = "") {
+  ctx = { ...ctx, metric: m };
   const cfg = WEEK[m.id] || { kind: m.kind === "line" ? "line" : "bars", avgLabel: "Média por dia" };
   const v = vals(rows, m.key), pv = vals(prev, m.key);
   const avgV = v.length ? avg(v) : null, prevAvg = pv.length ? avg(pv) : null;
@@ -231,7 +233,7 @@ export function weekHtml(m, rows, prev, ctx) {
   const first = rows[0].date, last = rows[6].date;
   const range = `${fmtDay(first, { day: "numeric", month: "short" })} – ${fmtDay(last, { day: "numeric", month: "short", year: "numeric" })}`;
 
-  const list = rows.filter((r) => r.date <= ctx.today).map((r) => `<button type="button" class="wk-row${r.date === ctx.sel ? " on" : ""}" data-go="${ctx.url(r.date)}" data-replace style="--c:${cfg.cols.length}">
+  const list = rows.filter((r) => r.date <= ctx.today).map((r) => `<button type="button" class="wk-row${r.date === ctx.sel ? " on" : ""}" data-go="${ctx.url(r.date)}" data-replace style="--c:${cfg.cols.length}"${r.date === ctx.sel ? ' aria-current="date"' : ""}>
       <span class="wk-day"><b>${WD[parseDay(r.date).getDay()]}</b> ${esc(fmtDay(r.date))}</span>
       ${cfg.cols.map(([, f]) => `<span class="num">${esc(f(r))}</span>`).join("")}</button>`).reverse().join("");
 
@@ -253,8 +255,9 @@ export function weekHtml(m, rows, prev, ctx) {
       <div class="wk-x${yaxis ? " yaxis" : ""}">${xlab}</div>
       ${legend}
     </section>
+    ${middle}
     <section class="card wk-days">
-      <div class="section-head"><div><h2>Dia a dia</h2><p>Escolha um dia para ver todos os detalhes logo abaixo.</p></div></div>
+      <div class="section-head"><div><h2>Dia a dia</h2><p>Escolha um dia no gráfico ou nesta lista; os detalhes aparecem logo abaixo do gráfico.</p></div></div>
       <div class="wk-row head" style="--c:${cfg.cols.length}"><span>Dia</span>${cfg.cols.map(([l]) => `<span>${esc(l)}</span>`).join("")}</div>
       ${list}
     </section>`;
