@@ -42,7 +42,7 @@ const hasAny = (r) => r && (r.sleepH != null || r.hrv != null);
 
 function datePill(ctx, base) {
   const prev = addDays(ctx.sel, -1), next = addDays(ctx.sel, 1);
-  return `<div class="head-r">${ctx.isToday ? "" : `<a class="btn" href="${ctx.url(ctx.today)}" data-replace>Hoje</a>`}<div class="stepper">
+  return `<div class="head-r">${ctx.isToday ? "" : `<a class="btn plain" href="${ctx.url(ctx.today)}" data-replace>Hoje</a>`}<div class="stepper">
       <button class="step" type="button" data-go="${ctx.url(prev)}" data-replace aria-label="Dia anterior">${icon("chevLeft")}</button>
       <button class="when pickable" type="button" data-pick aria-label="Escolher o dia, agora ${esc(fmtDay(ctx.sel, { day: "numeric", month: "long" }))}">${esc(ctx.isToday ? "Hoje" : fmtDay(ctx.sel, { weekday: "short", day: "numeric", month: "short" }))}</button>
       <input class="pick" type="date" tabindex="-1" aria-hidden="true" data-base="${base}" data-today="${ctx.today}" min="${ctx.firstDate}" max="${ctx.today}" value="${ctx.sel}">
@@ -50,10 +50,11 @@ function datePill(ctx, base) {
     </div></div>`;
 }
 
-/** Aviso quando o relógio não sincroniza há mais de um dia: os números da tela são de antes. */
+/** Marca discreta ao lado da data quando o relógio não sincroniza há mais de um dia. */
 function staleNotice(ctx, latest) {
   if (!latest || diffDays(ctx.today, latest) < 2) return "";
-  return `<div class="notice" role="status">${icon("refresh")}<p>Os dados mais recentes são de <b>${esc(fmtDay(latest, { weekday: "long", day: "numeric", month: "long" }))}</b>. Abra o app Garmin Connect no celular, com o relógio por perto, para sincronizar. Depois toque em atualizar.</p><button class="btn" type="button" data-refresh>Atualizar dados</button></div>`;
+  const n = diffDays(ctx.today, latest);
+  return `<span class="fresh" role="status" title="Os dados mais recentes são de ${esc(fmtDay(latest, { day: "numeric", month: "long" }))}. Abra o app Garmin Connect no celular, com o relógio por perto, para sincronizar."><i aria-hidden="true"></i>relógio sem sincronizar há ${n} dias</span>`;
 }
 
 function editSheet(hidden) {
@@ -101,9 +102,8 @@ export async function renderHub(root, route, alive, page = "home") {
     const hidden = hiddenCards();
     const from = addDays(now, -364);
     const yt = totals(between(acts, from, now));
-    html = `<header class="page-head"><div><h1>Resumo</h1><p class="muted">${esc(dateLine)}</p><p class="insight">${C.insightText(ctx)}</p></div>
-        <div class="head-r"><button class="btn" type="button" data-edit>Editar</button>${datePill(ctx, base)}</div></header>
-      ${staleNotice(ctx, latest)}
+    html = `<header class="page-head"><div><h1>Resumo</h1><p class="muted">${esc(dateLine)}${staleNotice(ctx, latest)}</p><p class="insight">${C.insightText(ctx)}</p></div>
+        <div class="head-r"><button class="btn plain" type="button" data-edit>Editar</button>${datePill(ctx, base)}</div></header>
       <div class="bento">${HOME.filter(([id]) => !hidden.includes(id)).map(([id]) => homeCard(id, ctx)).join("")}
         ${C.weekCard(ctx)}
         <section class="section span4"><div class="section-head"><div><h2>Treinos</h2><p>${yt.count} treinos e ${duration(yt.seconds)} nos últimos 12 meses. Clique em um dia para abrir o treino.</p></div><a class="link" href="#/treinos">Todos os treinos ${icon("arrowRight")}</a></div>
@@ -111,8 +111,7 @@ export async function renderHub(root, route, alive, page = "home") {
         ${workoutsTable(acts)}
       </div>${editSheet(hidden)}`;
   } else {
-    html = `<header class="page-head"><div><h1>${esc(cat.title)}</h1><p class="muted">${esc(cat.about)}</p></div>${datePill(ctx, base)}</header>
-      ${staleNotice(ctx, latest)}
+    html = `<header class="page-head"><div><h1>${esc(cat.title)}</h1><p class="muted">${esc(cat.about)}${staleNotice(ctx, latest)}</p></div>${datePill(ctx, base)}</header>
       <div class="bento">${cat.metrics.length ? C.metricList(cat.metrics, ctx) : ""}${cat.cards(ctx).join("")}${cat.workouts ? workoutsTable(acts) : ""}</div>`;
   }
 

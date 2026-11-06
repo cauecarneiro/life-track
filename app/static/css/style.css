@@ -101,7 +101,7 @@ main { margin-left: var(--side); min-height: 100vh; padding: 34px max(clamp(20px
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px 32px; margin-bottom: 22px; }
 .page-head h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; }
 .page-head p { margin-top: 4px; max-width: 64ch; }
-.insight { margin-top: 10px !important; color: var(--muted); font-size: 15px; }
+.insight { margin-top: 12px !important; max-width: 60ch; color: var(--muted); font-size: 14px; }
 .insight b { color: var(--ink); font-weight: 600; }
 .head-r { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .stepper { display: inline-flex; align-items: center; padding: 2px; border-radius: 11px; background: var(--card); }
@@ -542,12 +542,11 @@ a.cell:hover, a.cell:focus-visible { outline-color: var(--muted); transform: sca
 .tbl td a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tbl td:first-child a { font-weight: 500; }
 
-/* Aviso de dados antigos */
-.notice { display: flex; align-items: center; gap: 14px; margin-bottom: var(--gap); padding: 14px 16px; border-radius: 16px; background: var(--card); }
-.notice > .ic { color: var(--accent); }
-.notice p { flex: 1; color: var(--muted); font-size: 14px; }
-.notice p b { color: var(--ink); font-weight: 600; }
-.notice .btn { background: var(--card2); }
+/* Linha de sincronização atrasada */
+.fresh { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; color: var(--muted); font-size: 13px; cursor: help; }
+.fresh i { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--accent); }
+.btn.plain { padding: 0 8px; background: none; }
+.btn.plain:hover { background: var(--fill3); }
 
 /* Seletor de data dentro do stepper */
 .stepper { position: relative; }
@@ -614,5 +613,4 @@ input.pick { position: absolute; left: 50%; bottom: 0; width: 1px; height: 1px; 
 @media (max-width: 640px) {
   .mrow { grid-template-columns: 22px minmax(0, 1fr) minmax(70px, auto) 14px; }
   .spark7 { display: none; }
-  .notice { flex-wrap: wrap; }
 }
