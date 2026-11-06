@@ -620,4 +620,13 @@ def refresh():
     return {"ok": True}
 
 
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+class FreshStaticFiles(StaticFiles):
+    """Painel local: sempre entrega a versão atual dos arquivos, sem cache do navegador."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+
+app.mount("/", FreshStaticFiles(directory=STATIC_DIR, html=True), name="static")
