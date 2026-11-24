@@ -1,5 +1,11 @@
 # Life Track
 
+Painel web local para ver seus dados de saúde e treino de relógios e anéis inteligentes, hoje com Garmin. Para quem quer os próprios números em uma tela só, sem nuvem.
+
+Ferramenta · Web, Python e JavaScript · 2026
+
+[Página no portfólio](https://cauecarneiro.github.io/portfolio/life-track.html)
+
 Painel web local para ver seus dados de saúde e treino de relógios e anéis inteligentes. Ele busca os dados direto na API do fabricante a cada abertura, mostra em gráficos e **não guarda nada em disco**: sem banco de dados, sem nuvem, sem conta.
 
 > **Estado atual:** só o **Garmin** funciona hoje. **Oura** e **WHOOP** estão planejados e a [seção de cada um](#oura-ring) explica o que será preciso. **Apple Watch** exige um aplicativo iOS e está mais adiante no [roteiro](#roteiro).
@@ -11,7 +17,7 @@ Painel web local para ver seus dados de saúde e treino de relógios e anéis in
 | WHOOP | Planejado | API v2 com OAuth2 |
 | Apple Watch | Planejado | Aplicativo iOS lendo o HealthKit |
 
-## O que o painel mostra
+## O que faz
 
 Visual no estilo Apple, em modo escuro: fundo preto, cartões cinza-grafite, fonte do sistema (SF Pro no Mac) e um único destaque laranja, usado só no que está selecionado ou é o dia atual. Barra lateral em três grupos, como no app Saúde: Resumo; Categorias (Recuperação, Sono, Atividade, Coração, Corpo); Registros (Treinos). No celular ela vira uma barra de abas. A busca encontra qualquer dado (⌘K de qualquer lugar). Há microanimações: barras que crescem, linhas que se desenham, números que contam, o controle segmentado que desliza e resposta ao toque em cada cartão. Quem ativa "Reduzir movimento" no sistema não vê nenhuma animação.
 
@@ -45,7 +51,11 @@ O dia de hoje ainda está em andamento: passos, calorias, estresse, andares e es
 
 O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se você os registrar: **oxigênio (SpO2)** exige o Pulse Ox ligado no relógio (pode ser só durante o sono); **peso** é registrado no Garmin Connect (Mais › Estatísticas de saúde › Peso). O Life Track só lê. Quando não há registro, o cartão diz isso. Alimentação (diário pago da Garmin, o Connect+) e hidratação (o Forerunner 165 não grava água na conta) ficam de fora.
 
-## Como funciona
+## Meu papel
+
+Projeto solo e de código aberto. Os 22 commits do repositório são de Cauê Carneiro, de 31/10/2026 a 06/11/2026.
+
+## Como foi feito
 
 ```
  Navegador ──► servidor local (FastAPI, 127.0.0.1) ──► API Pessoal da Garmin
@@ -56,7 +66,11 @@ O painel puxa tudo o que a API Pessoal oferece, mas alguns dados só existem se 
 - O servidor guarda respostas em **memória** por pouco tempo (5 minutos para visão geral e lista de treinos, 1 hora para o detalhe de um treino). Ao reiniciar, tudo some. O botão de atualizar no canto superior direito limpa esse cache.
 - Localmente não há login e o servidor escuta apenas em `127.0.0.1`. Hospedado, o painel fica aberto a quem souber o endereço, a menos que você defina `APP_PASSWORD` (veja "Hospedagem").
 
-## Instalação
+## Tecnologias
+
+Python 3.12, FastAPI, Uvicorn, fitparse, cliente Python da API Pessoal da Garmin, JavaScript (módulos ES, sem build), Chart.js, Leaflet, Docker e Render.
+
+## Como rodar
 
 Requisitos: Python 3.12 ou mais novo, no macOS ou Linux (testado no macOS). Windows não foi testado.
 
@@ -177,7 +191,7 @@ Dados de saúde são sensíveis. O projeto foi feito para que nada saia da sua m
 - O navegador carrega, de serviços externos: a fonte Geist (Google Fonts), as bibliotecas Chart.js e Leaflet (cdnjs) e os **blocos de mapa do OpenStreetMap**. Esse último recebe os endereços dos blocos que você visualiza, o que revela a região dos seus percursos. Se isso importa para você, troque o provedor de mapas em `app/static/js/views/workout.js` ou desative o mapa.
 - Ao abrir uma issue ou enviar um pull request, **não inclua** chaves, respostas da API, arquivos FIT ou capturas de tela com seus dados.
 
-## Estrutura
+## Estrutura do código
 
 ```
 app/
@@ -233,3 +247,6 @@ O `render.yaml` cria o serviço a partir do `Dockerfile`. No Render: **New, Blue
 Sem mais nada, o painel abre **sem senha**: quem tiver o endereço vê seus dados. Não compartilhe o link. Para proteger, crie no Render a variável `APP_PASSWORD`; o navegador passa a pedir usuário (qualquer um) e essa senha.
 
 No plano grátis o serviço dorme após 15 minutos sem uso; a primeira visita depois disso leva cerca de 1 minuto. Cada push na `main` publica a nova versão.
+
+---
+Feito por Cauê Crillanovick · [portfólio](https://cauecarneiro.github.io/portfolio/) · [LinkedIn](https://www.linkedin.com/in/cau%C3%AA-carneiro)
